@@ -5,6 +5,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <pthread.h>
 
 int main(int argc, char ** argv) {
 
@@ -48,7 +49,15 @@ int main(int argc, char ** argv) {
 	}
 	memset(buffer,0, 256); 
 	n = read(newsockfd, buffer, 255); 
-
+	pthread_mutex_t count_mutex;
+	pthread_mutexattr_t mutexattr;
+	pthread_mutex_init(&count_mutex, &mutexattr);
+	pthread_mutex_lock(&count_mutex);
+	printf("trying something\n");
+	pthread_mutex_unlock(&count_mutex);
+	pthread_mutex_destroy(&count_mutex);
+	
+	
 	printf("This is the message: %s\n", buffer);
 	
 	close(newsockfd);
