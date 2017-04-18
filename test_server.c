@@ -5,7 +5,23 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <pthread.h>
+
+
+/*
+* This struct is supposed to store client information such as it's unique id and it's socket id (the socket we're using to communicate with it) 
+*
+*
+*/
+
+typedef struct clientData { 
+	int * socketId;
+	int clientId; 
+} clientData;
+
+int runCommands(clientData * client) {
+
+	return 0; 
+}
 
 int main(int argc, char ** argv) {
 
@@ -40,24 +56,35 @@ int main(int argc, char ** argv) {
 		exit(1);
 	} 
 
-	listen(sockfd, 5);
-	clilen = sizeof(cli_addr);
-	newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	listen(sockfd, 1);
+		
+	pthread_t clients[10];
+	int clientNum = 0;
+	
+	while(i < 10) {
+		clilen = sizeof(cli_addr);
+		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+		
+		if(newsockfd < 0) {
+			printf("Could not accept connection from client"); 
+		} else {
+			clientData * cData = (clientData*)malloc(sizeof(clientData));
+			cData -> socketId = (int*) malloc(sizeof(int));
+			*(cData -> socketId) = newsockfd; 
+			cData -> clientId = i; 
+		}
 
-	if(newsockfd < 0) {
-		printf("Could not accept connection from client"); 
-	}
+		flag = pthread_create(&clients[i], NULL, (void*)runCommands, cData);  
+		
+		if(flag == 1) {
+
+		} else if (flag == 0) {
+			i++; 
+		}
+		
 	memset(buffer,0, 256); 
 	n = read(newsockfd, buffer, 255); 
-	pthread_mutex_t count_mutex;
-	pthread_mutexattr_t mutexattr;
-	pthread_mutex_init(&count_mutex, &mutexattr);
-	pthread_mutex_lock(&count_mutex);
-	printf("trying something\n");
-	pthread_mutex_unlock(&count_mutex);
-	pthread_mutex_destroy(&count_mutex);
-	
-	
+
 	printf("This is the message: %s\n", buffer);
 	
 	close(newsockfd);
