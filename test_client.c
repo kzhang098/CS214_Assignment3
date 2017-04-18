@@ -22,6 +22,7 @@ int getStdin(char * buffer, int bytes) {
 		i++;
 	}
 	buffer[i] = '\0';
+	printf("%s\n", buffer);
 }
 
 // A function to concatenate the buffer and finalMessage, with a carat ^ separating them.
@@ -32,15 +33,15 @@ int concatFinalMessage(char * finalMessage, char * buffer) {
 	strncat(finalMessage, "^", 1);
 	strncat(finalMessage, buffer, strlen(buffer));
 	//Terminate the string.
-	finalMessage[strlen(finalMessage) - 1] = '\0';
-	printf("%s", finalMessage);
+	finalMessage[strlen(finalMessage)] = '\0';
+	printf("%s\n", finalMessage);
 }
 
 //First argument will be the hostname (this is resolved using the gethostbyname() function)
 //Port number will be the second argument. Make sure you convert this char string to integer using atoi() 
 int main(int argc, char ** argv) {
 	
-	char buffer[256]; // This represents buffer that will store messages/packets from the server
+	char * buffer = malloc(256); // This represents buffer that will store messages/packets from the server
 	char * finalMessage; // This represents the final message that will be sent to the server
 	int sockfd;	// This is an integer field which will tell us whether the socket creation call fails
 	int portNum;	//Port number the client communicates on. 
@@ -98,78 +99,80 @@ int main(int argc, char ** argv) {
 	getStdin(buffer, 256);
 	finalMessage = malloc(strlen(buffer) + 2);
 	strncat(finalMessage, buffer, strlen(buffer));
-	finalMessage[strlen(finalMessage) - 1] = '\0';
+	finalMessage[strlen(finalMessage)] = '\0';
 	printf("%s", finalMessage);
 	//Ask the user to specify the operation. If an invalid operation is given, repeatedly prompt the user.
 	while (strcmp(buffer, "open") != 0 && strcmp(buffer, "read") != 0 && strcmp(buffer, "write") != 0 && strcmp(buffer, "close") != 0) {
-		//If open is selected, get the pathname and flags.
-		if (strcmp(buffer, "open") == 0) {
-			printf("Please enter the pathname you want to open:\n");
-			getStdin(buffer, 256);
-			//If an invalid flag is given, repeatedly prompt the user. Otherwise, convert them to their int form and concatenate them.
-			while (strcmp(buffer, "O_RDONLY") != 0 && strcmp(buffer, "O_WRONLY") != 0 && strcmp(buffer, "O_RDWR") != 0) {
-				printf("Please enter the flags for the file you want to open:\n");
-				getStdin(buffer, 256);
-				concatFinalMessage(finalMessage, buffer);
-				//RD_ONLY is 0, O_WRONLY is 1, and O_RDWR is 2.
-				if (strcmp(buffer, "O_RDONLY") == 0) {
-					concatFinalMessage(finalMessage, "0");
-				} else if (strcmp(buffer, "O_WRONLY") == 0) {
-					concatFinalMessage(finalMessage, "1");
-				} else if (strcmp(buffer, "O_RDWR") == 0) {
-					concatFinalMessage(finalMessage, "2");
-				} else {
-					printf("Invalid flags. Please try again.\n");
-				}
-			}
-		//If write is selected, get the file descriptor and string to write to the file.
-		} else if (strcmp(buffer, "write") == 0) {
-			printf("Please enter the file descriptor of the file you want to write to:\n");
-			getStdin(buffer, 256);
-			concatFinalMessage(finalMessage, buffer);
-			//Get number of bytes to write to file.
-			while (atoi(buffer) < 1){
-				printf("Please enter the number of bytes you wish to write to file:\n");
-				getStdin(buffer, 256);
-				if (atoi(buffer) < 1) {
-					printf("Please enter a positive whole number.\n");
-				}
-			}
-			int nbytes = atoi(buffer);
-			//Get string to write to file.
-			printf("Please enter the string you wish to write to file:\n");
-			getStdin(buffer, nbytes);
-			concatFinalMessage(finalMessage, buffer);
-			concatFinalMessage(finalMessage, itoa(nbytes));
-		} else if (strcmp(buffer, "read") == 0) {
-			printf("Please enter the file descriptor of the file you want to read from:\n");
-			getStdin(buffer, 256);
-			concatFinalMessage(finalMessage, buffer);
-			//Get number of bytes to read from file.
-			while (atoi(buffer) < 1){
-				printf("Please enter the number of bytes you wish to read from file:\n");
-				getStdin(buffer, 256);
-				if (atoi(buffer) < 1) {
-					printf("Please enter a positive whole number.\n");
-				}
-			}
-			int nbytes = atoi(buffer);
-			//Get string to write to file.
-			printf("Please enter the variable you wish to read from file into:\n");
-			getStdin(buffer, nbytes);
-			concatFinalMessage(finalMessage, buffer);
-			concatFinalMessage(finalMessage, itoa(nbytes));
-		} else if (strcmp(buffer, "close") != 0) {
-			printf("Please enter the file descriptor of the file you want to close:\n");
-			getStdin(buffer, 256);
-			concatFinalMessage(finalMessage, buffer);
-		} else {
-			printf("Invalid operation. Only open, read, write, and close are allowed.\nPlease enter what operation you are performing (open, read, write, or close):\n");
-			getStdin(buffer, 256);
-		}
+		printf("Invalid operation. Only open, read, write, and close are allowed.\nPlease enter what operation you are performing (open, read, write, or close):\n");
+		getStdin(buffer, 256);
 	}
-	
-	
+	//If open is selected, get the pathname and flags.
+	if (strcmp(buffer, "open") == 0) {
+		printf("Please enter the pathname you want to open:\n");
+		getStdin(buffer, 256);
+		concatFinalMessage(finalMessage, buffer);
+		//If an invalid flag is given, repeatedly prompt the user. Otherwise, convert them to their int form and concatenate them.
+		while (strcmp(buffer, "O_RDONLY") != 0 && strcmp(buffer, "O_WRONLY") != 0 && strcmp(buffer, "O_RDWR") != 0) {
+			printf("Please enter the flags for the file you want to open:\n");
+			getStdin(buffer, 256);
+			//RD_ONLY is 0, O_WRONLY is 1, and O_RDWR is 2.
+			if (strcmp(buffer, "O_RDONLY") == 0) {
+				concatFinalMessage(finalMessage, "0");
+			} else if (strcmp(buffer, "O_WRONLY") == 0) {
+				concatFinalMessage(finalMessage, "1");
+			} else if (strcmp(buffer, "O_RDWR") == 0) {
+				concatFinalMessage(finalMessage, "2");
+			} else {
+				printf("Invalid flags. Please try again.\n");
+			}
+		}
+	//If write is selected, get the file descriptor and string to write to the file.
+	} else if (strcmp(buffer, "write") == 0) {
+		printf("Please enter the file descriptor of the file you want to write to:\n");
+		getStdin(buffer, 256);
+		concatFinalMessage(finalMessage, buffer);
+		//Get number of bytes to write to file.
+		while (atoi(buffer) < 1){
+			printf("Please enter the number of bytes you wish to write to file:\n");
+			getStdin(buffer, 256);
+			if (atoi(buffer) < 1) {
+				printf("Please enter a positive whole number.\n");
+			}
+		}
+		int nbytes = atoi(buffer);
+		printf("%d\n", nbytes);
+		//Get string to write to file.
+		printf("Please enter the string you wish to write to file:\n");
+		getStdin(buffer, nbytes);
+		concatFinalMessage(finalMessage, buffer);	
+		memset(buffer,0,strlen(buffer));
+		sprintf(buffer, "%d", nbytes);
+		concatFinalMessage(finalMessage, buffer);
+	} else if (strcmp(buffer, "read") == 0) {
+		printf("Please enter the file descriptor of the file you want to read from:\n");
+		getStdin(buffer, 256);
+		concatFinalMessage(finalMessage, buffer);
+		//Get number of bytes to read from file.
+		while (atoi(buffer) < 1){
+			printf("Please enter the number of bytes you wish to read from file:\n");
+			getStdin(buffer, 256);
+			if (atoi(buffer) < 1) {
+				printf("Please enter a positive whole number.\n");
+			}
+		}
+		int nbytes = atoi(buffer);
+		//Get string to write to file.
+		printf("Please enter the variable you wish to read from file into:\n");
+		getStdin(buffer, nbytes);
+		concatFinalMessage(finalMessage, buffer);
+		memset(buffer,0,strlen(buffer));
+		sprintf(buffer, "%d", nbytes);
+		concatFinalMessage(finalMessage, buffer);
+	} else if (strcmp(buffer, "close") == 0) {
+		printf("Please enter the file descriptor of the file you want to close:\n");
+		getStdin(buffer, 256);
+		concatFinalMessage(finalMessage, buffer);
+	}
 	
 	
 	n = write(sockfd, buffer, strlen(buffer));
