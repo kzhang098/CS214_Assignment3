@@ -36,13 +36,27 @@ typedef struct clientInfo {
 */
 
 int readFromSocket(int* socket, clientInfo client) {
-	
+	char* buffer[256];
+	memset(buffer,0, sizeof(buffer)); 
+	read(socket, buffer, sizeof(buffer)); 
 
+	//For testing purposes: 
+	printf("This is the buffer received from the client: %s\n", buffer);
+
+	//After which I should be able to parse the data from the packet and store it in the packetData struct. 
+
+	return 0; 
+	
 }
+
+
+//void parseBuffer(char * buffer);
 
 int runCommands(clientInfo * client) {
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
 	readFromSocket(socket, client); 
+	
+
 	
 	return 0; 
 }
