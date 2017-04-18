@@ -13,13 +13,35 @@
 *
 */
 
-typedef struct clientData { 
+typedef struct packetData {
+	int flag; //The open, read, write commands.
+	int size; //The size of the bytes to be read, written. 
+	char * buffer;
+
+} packetData; 
+
+typedef struct clientInfo { 
 	int * socketId;
 	int clientId; 
-} clientData;
+	packetData * commands;
+} clientInfo;
 
-int runCommands(clientData * client) {
 
+/*
+* THE BELOW FUNCTIONS SHOULD BE MOVED TO LIBNETFILES LATER
+*
+*
+*/
+
+int readFromSocket(int* socket, clientInfo client) {
+	
+
+}
+
+int runCommands(clientInfo * client) {
+	int * socket = client->socketId; // This is the socket we are using to communicate with the client
+	readFromSocket(socket, client); 
+	
 	return 0; 
 }
 
@@ -68,12 +90,13 @@ int main(int argc, char ** argv) {
 		if(newsockfd < 0) {
 			printf("Could not accept connection from client"); 
 		} else {
-			clientData * cData = (clientData*)malloc(sizeof(clientData));
-			cData -> socketId = (int*) malloc(sizeof(int));
-			*(cData -> socketId) = newsockfd; 
-			cData -> clientId = i; 
+			clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
+			cInfo->socketId = (int*) malloc(sizeof(int));
+			*(cData->socketId) = newsockfd; 
+			cData->clientId = i; 
+			cData->commands = (packetData*)malloc(sizeof(packetData)); 
 		}
-
+		
 		flag = pthread_create(&clients[i], NULL, (void*)runCommands, cData);  
 		
 		if(flag == 1) {
@@ -81,14 +104,14 @@ int main(int argc, char ** argv) {
 		} else if (flag == 0) {
 			i++; 
 		}
-		
-	memset(buffer,0, 256); 
-	n = read(newsockfd, buffer, 255); 
-
-	printf("This is the message: %s\n", buffer);
 	
-	close(newsockfd);
-	close(sockfd); 
+		memset(buffer,0, 256); 
+		n = read(newsockfd, buffer, 255); 
+
+		printf("This is the message: %s\n", buffer);
+	
+		close(newsockfd);
+		close(sockfd); 
 
 	return 0; 
 }
