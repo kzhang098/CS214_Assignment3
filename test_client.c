@@ -127,6 +127,7 @@ int main(int argc, char ** argv) {
 			printf("Please enter the file descriptor of the file you want to write to:\n");
 			getStdin(buffer, 256);
 			concatFinalMessage(finalMessage, buffer);
+			//Get number of bytes to write to file.
 			while (atoi(buffer) < 1){
 				printf("Please enter the number of bytes you wish to write to file:\n");
 				getStdin(buffer, 256);
@@ -135,13 +136,33 @@ int main(int argc, char ** argv) {
 				}
 			}
 			int nbytes = atoi(buffer);
+			//Get string to write to file.
 			printf("Please enter the string you wish to write to file:\n");
 			getStdin(buffer, nbytes);
 			concatFinalMessage(finalMessage, buffer);
+			concatFinalMessage(finalMessage, itoa(nbytes));
 		} else if (strcmp(buffer, "read") == 0) {
-		
+			printf("Please enter the file descriptor of the file you want to read from:\n");
+			getStdin(buffer, 256);
+			concatFinalMessage(finalMessage, buffer);
+			//Get number of bytes to read from file.
+			while (atoi(buffer) < 1){
+				printf("Please enter the number of bytes you wish to read from file:\n");
+				getStdin(buffer, 256);
+				if (atoi(buffer) < 1) {
+					printf("Please enter a positive whole number.\n");
+				}
+			}
+			int nbytes = atoi(buffer);
+			//Get string to write to file.
+			printf("Please enter the variable you wish to read from file into:\n");
+			getStdin(buffer, nbytes);
+			concatFinalMessage(finalMessage, buffer);
+			concatFinalMessage(finalMessage, itoa(nbytes));
 		} else if (strcmp(buffer, "close") != 0) {
-		
+			printf("Please enter the file descriptor of the file you want to close:\n");
+			getStdin(buffer, 256);
+			concatFinalMessage(finalMessage, buffer);
 		} else {
 			printf("Invalid operation. Only open, read, write, and close are allowed.\nPlease enter what operation you are performing (open, read, write, or close):\n");
 			getStdin(buffer, 256);
