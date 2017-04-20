@@ -1,6 +1,93 @@
+#include "libnetfiles.h"
+
+
+int openSocket() {
+	int sockfd;	// This is an integer field which will tell us whether the socket creation call fails
+	int portNum;	//Port number the client communicates on. 
+	int n;	
+	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
+	struct sockaddr_in serv_addr; //This is the struct we will use to start the connection. Will contain info from hostent * server
+	
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
+
+	if(sockfd < 0) {
+		// DO SOMETHING
+	} 
+	server = gethostbyname(argv[1]);
+
+	//This above line/function resolves the hostname and will map the hostname to it's IP ADDRESS. If not resolved, then return NULL. Otherwise
+	//a struct is returned with server info. 
+	
+	if(server == NULL) {
+		//THROW ERROR
+	}
+	
+	portNum = atoi(argv[2]); //Port number
+
+	memset(&serv_addr, 0, sizeof(serv_addr)); //YOU HAVE TO ZERO OUT everything in the struct. 
+
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+	serv_addr.sin_port = htons(portNum); //hton? This converts an int to a network readable integer.
+	
+	int status = connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
+
+	if(status < 0) {
+		printf("Error connecting...");
+	} 
+	
+	n = write(sockfd, buffer, strlen(buffer));
+	
+	if(n < 0) {
+		printf("Error writing to socket...");
+		exit(1);	
+	}
+
+	bzero(buffer,256);
+	n = read(sockfd,buffer,255); 
+	
+	if(n < 0) {
+		printf("Error reading from socket");
+		exit(1); 
+	}
+	
+	printf("%s\n", buffer); 
+	
+	close(sockfd);
+	return 0; 
+}
+
+
+void error(char * error_msg) {
+	perror(error_msg);
+	exit(1); 
+}
 
 int netopen(const char *path, int oflags) {
-	return -1 * open(path, oflags);
+	
+	if (oflags != 0 && oflags != 1 && oflags != 2) {
+		printf("Invalid flags.\n");
+		return;
+	}
+	char * finalMessage = malloc(5 + strlen(path) + 10);
+	finalMessage = strncat(finalMessage, "open", 4);
+	finalMessage[4] = '^';
+	finalMessage[5] = '\0';
+	finalMessage = strncat(finalMessage, path, strlen(path));
+	finalMessage = strncat(finalMessage, "^", 1);
+	if (oflags == 0) {
+		finalMessage = strncat(finalMessage, "0", 1);
+	} else if (oflags == 1) {
+		finalMessage = strncat(finalMessage, "1", 1);
+	} else {
+		finalMessage = strncat(finalMessage, "2", 1);
+	}
+	finalMessage[strlen(finalMessage)] = '\0';
+	printf("%s\n", finalMessage);
+	int * fd = malloc(sizeof(int));
+	*fd = open(path, oflags);
+	*fd *= -1;
+	return *fd;
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
