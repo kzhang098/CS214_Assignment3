@@ -1,12 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/fcntl.h>
-#include <netdb.h>
+
+#include "libnetfiles.h"
 
 // A function to read from standard input into a buffer. Includes how many bytes to read from standard input.
 int getStdin(char * buffer, int bytes) {
@@ -173,7 +166,7 @@ int main(int argc, char ** argv) {
 		getStdin(buffer, 256);
 		concatFinalMessage(finalMessage, buffer);
 	}
-	
+	netopen("FUCK YOU", 0);
 	
 	n = write(sockfd, buffer, strlen(buffer));
 	

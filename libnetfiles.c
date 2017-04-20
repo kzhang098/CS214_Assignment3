@@ -64,17 +64,17 @@ void error(char * error_msg) {
 }
 
 int netopen(const char *path, int oflags) {
-	
+	opensocket();
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
 	}
 	char * finalMessage = malloc(5 + strlen(path) + 10);
 	finalMessage = strncat(finalMessage, "open", 4);
-	finalMessage[4] = '^';
+	finalMessage[4] = ',';
 	finalMessage[5] = '\0';
 	finalMessage = strncat(finalMessage, path, strlen(path));
-	finalMessage = strncat(finalMessage, "^", 1);
+	finalMessage = strncat(finalMessage, ",", 1);
 	if (oflags == 0) {
 		finalMessage = strncat(finalMessage, "0", 1);
 	} else if (oflags == 1) {
@@ -84,13 +84,25 @@ int netopen(const char *path, int oflags) {
 	}
 	finalMessage[strlen(finalMessage)] = '\0';
 	printf("%s\n", finalMessage);
-	int * fd = malloc(sizeof(int));
-	*fd = open(path, oflags);
-	*fd *= -1;
-	return *fd;
+	return -1 * open(path, oflags);
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
+	opensocket();
+	char * fd = malloc(64);
+	sprintf(fd, "%d", fildes);
+	char * finalMessage = malloc(strlen(fd) + 200);
+	finalMessage = strncat(finalMessage, fd, strlen(fd));
+	finalMessage = strncat(finalMessage, ",", 1);
+	char * buffer = malloc(64);
+	sprintf(buffer, "%ld", buf);
+	finalMessage = strncat(finalMessage, buffer, strlen(buffer));
+	finalMessage = strncat(finalMessage, ",", 1);
+	char * nbytes = malloc(64);
+	sprintf(nbytes, "%d", nbyte);
+	finalMessage = strncat(finalMessage, nbytes, strlen(nbytes));
+	finalMessage[strlen(finalMessage)] = '\0';
+	printf("%s\n", finalMessage);
 	return read(-1 * fildes, buf, nbyte);
 }
 
