@@ -11,7 +11,7 @@ int openSocket() {
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
 
 	if(sockfd < 0) {
-		// DO SOMETHING
+		return;
 	} 
 	server = gethostbyname(argv[1]);
 
@@ -19,7 +19,7 @@ int openSocket() {
 	//a struct is returned with server info. 
 	
 	if(server == NULL) {
-		//THROW ERROR
+		return;
 	}
 	
 	portNum = atoi(argv[2]); //Port number
@@ -35,9 +35,11 @@ int openSocket() {
 	if(status < 0) {
 		printf("Error connecting...");
 	} 
-	
+	return sockfd;
+}
+
+char * callServer(int sockfd, char * buffer) {
 	n = write(sockfd, buffer, strlen(buffer));
-	
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
@@ -52,12 +54,10 @@ int openSocket() {
 	}
 	
 	printf("%s\n", buffer); 
-	
-	close(sockfd);
-	return 0; 
+	return buffer;
 }
-
-
+	
+	
 void error(char * error_msg) {
 	perror(error_msg);
 	exit(1); 
@@ -84,7 +84,9 @@ int netopen(const char *path, int oflags) {
 	}
 	finalMessage[strlen(finalMessage)] = '\0';
 	printf("%s\n", finalMessage);
-	return -1 * open(path, oflags);
+	callServer(sockfd, finalMessage);
+	close(sockfd);
+	return 0; 
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
@@ -92,6 +94,8 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
+	finalMessage = strncat(finalMessage, "read", 4);
+	finalMessage = strncat(finalMessage, ",", 1);
 	finalMessage = strncat(finalMessage, fd, strlen(fd));
 	finalMessage = strncat(finalMessage, ",", 1);
 	char * buffer = malloc(64);
@@ -103,13 +107,43 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	finalMessage = strncat(finalMessage, nbytes, strlen(nbytes));
 	finalMessage[strlen(finalMessage)] = '\0';
 	printf("%s\n", finalMessage);
-	return read(-1 * fildes, buf, nbyte);
+	callServer(sockfd, finalMessage);
+	close(sockfd);
+	return 0;
 }
 
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
-	return write(-1 * fildes, buf, nbyte);
+	opensocket();
+	char * fd = malloc(64);
+	sprintf(fd, "%d", fildes);
+	char * finalMessage = malloc(strlen(fd) + 200);
+	finalMessage = strncat(finalMessage, "write", 5);
+	finalMessage = strncat(finalMessage, ",", 1);
+	finalMessage = strncat(finalMessage, fd, strlen(fd));
+	finalMessage = strncat(finalMessage, ",", 1);
+	char * buffer = malloc(64);
+	sprintf(buffer, "%ld", buf);
+	finalMessage = strncat(finalMessage, buffer, strlen(buffer));
+	finalMessage = strncat(finalMessage, ",", 1);
+	char * nbytes = malloc(64);
+	sprintf(nbytes, "%d", nbyte);
+	finalMessage = strncat(finalMessage, nbytes, strlen(nbytes));
+	finalMessage[strlen(finalMessage)] = '\0';
+	printf("%s\n", finalMessage);
+	callServer(sockfd, finalMessage);
+	close(sockfd);
+	return 0;
 }
 
  int netclose(int fd) {
-	 return close(-1 * fd);
+	opensocket();
+	char * fd = malloc(64);
+	sprintf(fd, "%d", fildes);
+	char * finalMessage = malloc(strlen(fd) + 10);
+	finalMessage = strncat(finalMessage, "close", 5);
+	finalMessage = strncat(finalMessage, ",", 1);
+	finalMessage = strncat(finalMessage, fd, strlen(fd));
+	callServer(sockfd, finalMessage);
+	close(sockfd);
+	return 0;
  }
