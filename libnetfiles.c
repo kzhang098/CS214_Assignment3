@@ -1,7 +1,7 @@
 #include "libnetfiles.h"
 
 
-int openSocket() {
+int openSocket(char * hostname) {
 	int sockfd;	// This is an integer field which will tell us whether the socket creation call fails
 	int portNum;	//Port number the client communicates on. 
 	int n;	
@@ -11,18 +11,18 @@ int openSocket() {
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
 
 	if(sockfd < 0) {
-		return;
+		return -1;
 	} 
-	server = gethostbyname("localhost");
+	server = gethostbyname(hostname);
 
 	//This above line/function resolves the hostname and will map the hostname to it's IP ADDRESS. If not resolved, then return NULL. Otherwise
 	//a struct is returned with server info. 
 	
 	if(server == NULL) {
-		return;
+		return -1;
 	}
 	
-	portNum = atoi("51717"); //Port number
+	portNum = atoi("9000"); //Port number
 
 	memset(&serv_addr, 0, sizeof(serv_addr)); //YOU HAVE TO ZERO OUT everything in the struct. 
 
@@ -34,6 +34,7 @@ int openSocket() {
 
 	if(status < 0) {
 		printf("Error connecting...");
+		return -1;
 	} 
 	return sockfd;
 }
@@ -57,10 +58,18 @@ char * callServer(int sockfd, char * buffer) {
 	return buffer;
 }
 	
+
 	
 void error(char * error_msg) {
 	perror(error_msg);
 	exit(1); 
+}
+
+netserverinit(char * hostname) {
+	if (opensocket(hostname) == -1) {
+		return -1;
+	}
+	return 0;
 }
 
 int netopen(const char *path, int oflags) {
