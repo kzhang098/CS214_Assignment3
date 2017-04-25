@@ -13,7 +13,7 @@ int openSocket() {
 	if(sockfd < 0) {
 		return;
 	} 
-	server = gethostbyname(argv[1]);
+	server = gethostbyname("localhost");
 
 	//This above line/function resolves the hostname and will map the hostname to it's IP ADDRESS. If not resolved, then return NULL. Otherwise
 	//a struct is returned with server info. 
@@ -22,7 +22,7 @@ int openSocket() {
 		return;
 	}
 	
-	portNum = atoi(argv[2]); //Port number
+	portNum = atoi("51717"); //Port number
 
 	memset(&serv_addr, 0, sizeof(serv_addr)); //YOU HAVE TO ZERO OUT everything in the struct. 
 
@@ -39,7 +39,7 @@ int openSocket() {
 }
 
 char * callServer(int sockfd, char * buffer) {
-	n = write(sockfd, buffer, strlen(buffer));
+	int n = write(sockfd, buffer, strlen(buffer));
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
@@ -64,12 +64,12 @@ void error(char * error_msg) {
 }
 
 int netopen(const char *path, int oflags) {
-	opensocket();
+	int sockfd = openSocket();
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
 	}
-	char * finalMessage = malloc(5 + strlen(path) + 10);
+	char * finalMessage = malloc(15 + strlen(path));
 	finalMessage = strncat(finalMessage, "open", 4);
 	finalMessage[4] = ',';
 	finalMessage[5] = '\0';
@@ -90,10 +90,11 @@ int netopen(const char *path, int oflags) {
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
-	opensocket();
+	int sockfd = openSocket();
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
+	finalMessage[0] = '\0';
 	finalMessage = strncat(finalMessage, "read", 4);
 	finalMessage = strncat(finalMessage, ",", 1);
 	finalMessage = strncat(finalMessage, fd, strlen(fd));
@@ -113,10 +114,11 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 }
 
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
-	opensocket();
+	int sockfd = openSocket();
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
+	finalMessage[0] = '\0';
 	finalMessage = strncat(finalMessage, "write", 5);
 	finalMessage = strncat(finalMessage, ",", 1);
 	finalMessage = strncat(finalMessage, fd, strlen(fd));
@@ -136,13 +138,15 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 }
 
  int netclose(int fd) {
-	opensocket();
-	char * fd = malloc(64);
-	sprintf(fd, "%d", fildes);
-	char * finalMessage = malloc(strlen(fd) + 10);
+	int sockfd = openSocket();
+	char * fdes = malloc(64);
+	sprintf(fdes, "%d", fd);
+	char * finalMessage = malloc(strlen(fdes) + 10);
+	finalMessage[0] = '\0';
 	finalMessage = strncat(finalMessage, "close", 5);
 	finalMessage = strncat(finalMessage, ",", 1);
-	finalMessage = strncat(finalMessage, fd, strlen(fd));
+	finalMessage = strncat(finalMessage, fdes, strlen(fdes));
+	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
 	close(sockfd);
 	return 0;

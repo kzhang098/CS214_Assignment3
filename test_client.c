@@ -167,7 +167,9 @@ int main(int argc, char ** argv) {
 		concatFinalMessage(finalMessage, buffer);
 	}
 	netopen("FUCK YOU", 0);
-	
+	netread(-384, "Yeh", 12);
+	netwrite(-384, "Yeh", 12);
+	netclose(-384);
 	n = write(sockfd, buffer, strlen(buffer));
 	
 	if(n < 0) {
@@ -187,10 +189,4 @@ int main(int argc, char ** argv) {
 	
 	close(sockfd);
 	return 0; 
-}
-
-
-void error(char * error_msg) {
-	perror(error_msg);
-	exit(1); 
 }
