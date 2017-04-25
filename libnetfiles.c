@@ -1,6 +1,5 @@
 #include "libnetfiles.h"
 
-static int sockfd; // This is an integer field which stores the socket file descriptor
 static int serverInitialized = 0;
 
 char * callServer(int sockfd, char * buffer) {
@@ -29,7 +28,8 @@ void error(char * error_msg) {
 	exit(1); 
 }
 
-int netserverinit(char * hostname) {
+int openSocket(char * hostname) {
+	int sockfd; // This is an integer field which stores the socket file descriptor
 	int portNum = 9000;	//Port number the client communicates on. 
 	int n;	
 	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
@@ -61,7 +61,16 @@ int netserverinit(char * hostname) {
 		printf("Error connecting...");
 		return -1;
 	} 
+	return sockfd;
+}
+
+int netserverinit(char * hostname) {
+	int sockfd = opensocket(hostname);
+	if (sockfd == -1) {
+		return -1;
+	}
 	serverInitialized = 1;
+	close(sockfd);
 	return 0;
 }
 
@@ -70,6 +79,7 @@ int netopen(const char *path, int oflags) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	opensocket("localhost");
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
@@ -99,6 +109,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	opensocket("localhost");
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -126,6 +137,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	opensocket("localhost");
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -153,6 +165,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	opensocket("localhost");
 	char * fdes = malloc(64);
 	sprintf(fdes, "%d", fd);
 	char * finalMessage = malloc(strlen(fdes) + 10);
