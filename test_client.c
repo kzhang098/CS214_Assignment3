@@ -166,6 +166,7 @@ int main(int argc, char ** argv) {
 		getStdin(buffer, 256);
 		concatFinalMessage(finalMessage, buffer);
 	}
+	netserverinit("localhost");
 	netopen("FUCK YOU", 0);
 	netread(-384, "Yeh", 12);
 	netwrite(-384, "Yeh", 12);

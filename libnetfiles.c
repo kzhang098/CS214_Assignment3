@@ -1,43 +1,7 @@
 #include "libnetfiles.h"
 
-
-int openSocket(char * hostname) {
-	int sockfd;	// This is an integer field which will tell us whether the socket creation call fails
-	int portNum;	//Port number the client communicates on. 
-	int n;	
-	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
-	struct sockaddr_in serv_addr; //This is the struct we will use to start the connection. Will contain info from hostent * server
-	
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
-
-	if(sockfd < 0) {
-		return -1;
-	} 
-	server = gethostbyname(hostname);
-
-	//This above line/function resolves the hostname and will map the hostname to it's IP ADDRESS. If not resolved, then return NULL. Otherwise
-	//a struct is returned with server info. 
-	
-	if(server == NULL) {
-		return -1;
-	}
-	
-	portNum = atoi("9000"); //Port number
-
-	memset(&serv_addr, 0, sizeof(serv_addr)); //YOU HAVE TO ZERO OUT everything in the struct. 
-
-	serv_addr.sin_family = AF_INET;
-	bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
-	serv_addr.sin_port = htons(portNum); //hton? This converts an int to a network readable integer.
-	
-	int status = connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
-
-	if(status < 0) {
-		printf("Error connecting...");
-		return -1;
-	} 
-	return sockfd;
-}
+static int sockfd; // This is an integer field which stores the socket file descriptor
+static int serverInitialized = 0;
 
 char * callServer(int sockfd, char * buffer) {
 	int n = write(sockfd, buffer, strlen(buffer));
@@ -65,15 +29,47 @@ void error(char * error_msg) {
 	exit(1); 
 }
 
-netserverinit(char * hostname) {
-	if (opensocket(hostname) == -1) {
+int netserverinit(char * hostname) {
+	int portNum = 9000;	//Port number the client communicates on. 
+	int n;	
+	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
+	struct sockaddr_in serv_addr; //This is the struct we will use to start the connection. Will contain info from hostent * server
+	
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
+
+	if(sockfd < 0) {
+		return -1;
+	} 
+	server = gethostbyname(hostname);
+
+	//This above line/function resolves the hostname and will map the hostname to it's IP ADDRESS. If not resolved, then return NULL. Otherwise
+	//a struct is returned with server info. 
+	
+	if(server == NULL) {
 		return -1;
 	}
+
+	memset(&serv_addr, 0, sizeof(serv_addr)); //YOU HAVE TO ZERO OUT everything in the struct. 
+
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+	serv_addr.sin_port = htons(portNum); //hton? This converts an int to a network readable integer.
+	
+	int status = connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
+
+	if(status < 0) {
+		printf("Error connecting...");
+		return -1;
+	} 
+	serverInitialized = 1;
 	return 0;
 }
 
 int netopen(const char *path, int oflags) {
-	int sockfd = openSocket();
+	if (serverInitialized == 0) {
+		printf("HOST NOT FOUND\n");
+		return -1;
+	}
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
@@ -99,7 +95,10 @@ int netopen(const char *path, int oflags) {
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
-	int sockfd = openSocket();
+	if (serverInitialized == 0) {
+		printf("HOST NOT FOUND\n");
+		return -1;
+	}
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -123,7 +122,10 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 }
 
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
-	int sockfd = openSocket();
+	if (serverInitialized == 0) {
+		printf("HOST NOT FOUND\n");
+		return -1;
+	}
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -147,7 +149,10 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 }
 
  int netclose(int fd) {
-	int sockfd = openSocket();
+	if (serverInitialized == 0) {
+		printf("HOST NOT FOUND\n");
+		return -1;
+	}
 	char * fdes = malloc(64);
 	sprintf(fdes, "%d", fd);
 	char * finalMessage = malloc(strlen(fdes) + 10);
