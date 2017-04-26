@@ -107,36 +107,38 @@ int main(int argc, char ** argv) {
 	listen(sockfd, 1);
 		
 	int clientNum = 0;
-	
-	while(i < 10) {
-		clilen = sizeof(cli_addr);
-		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	while (1) {
+		while(i < 10) {
+			clilen = sizeof(cli_addr);
+			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+			
+			if(newsockfd < 0) {
+				printf("Could not accept connection from client"); 
+			} else {
+				clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
+				cInfo->socketId = (int*) malloc(sizeof(int));
+				*(cData->socketId) = newsockfd; //Stores the socket into the struct. 
+				cData->clientId = i; 
+				cData->commands = (packetData*)malloc(sizeof(packetData)); 
+			}
+			
+			flag = pthread_create(&clients[i], NULL, (void*)runCommands, cData);  //Starts a new thread with the created struct 
+			
+			if(flag == 1) {
+
+			} else if (flag == 0) {
+				i++; 
+			}
 		
-		if(newsockfd < 0) {
-			printf("Could not accept connection from client"); 
-		} else {
-			clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
-			cInfo->socketId = (int*) malloc(sizeof(int));
-			*(cData->socketId) = newsockfd; //Stores the socket into the struct. 
-			cData->clientId = i; 
-			cData->commands = (packetData*)malloc(sizeof(packetData)); 
+			memset(buffer,0, 256); 
+			n = read(newsockfd, buffer, 255); 
+
+			printf("This is the message: %s\n", buffer);
+		
+			pthread_join(flag, NULL);
+			close(newsockfd);
+			close(sockfd); 
 		}
-		
-		flag = pthread_create(&clients[i], NULL, (void*)runCommands, cData);  //Starts a new thread with the created struct 
-		
-		if(flag == 1) {
-
-		} else if (flag == 0) {
-			i++; 
-		}
-	
-		memset(buffer,0, 256); 
-		n = read(newsockfd, buffer, 255); 
-
-		printf("This is the message: %s\n", buffer);
-	
-		close(newsockfd);
-		close(sockfd); 
-
+	}
 	return 0; 
 }
