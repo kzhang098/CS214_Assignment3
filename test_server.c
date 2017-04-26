@@ -140,11 +140,16 @@ char ** tokenizeMessage(char* message) {
                                         break;
                         }
 		}
-	
-
 	}
 
-		  
+	result[0] = functionName;
+	result[1] = fileDes;
+	result[2] = path;
+	result[3] = flags; 
+	result[4] = buffer;
+	result[5] = length; 
+
+	return result;
 }
 
 
