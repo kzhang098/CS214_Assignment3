@@ -41,16 +41,114 @@ typedef struct clientInfo {
 *
 */
 
-//Packet Structure: Function Type, Flags, path length 
+//Packet Structure: Function,File Descriptor^File Path;o_flags*buffer:nbyte? 
+
+//Tip for delimeters: 
+// " , " : Function 
+// " ^ " : 
+// 
+
+char ** tokenizeMessage(char* message) {
+	
+	char ** result = (char**)malloc(6*sizeof(char*)); 
+		
+	//Index values and array to store the indices. 
+
+	int funcIndex, fdIndex, pathIndex, flagIndex, bufferIndex, lengthIndex;
+	int * indexArr[7]; 
+	
+	indexArr[0] = 0;
+	funcIndex = strcspn(message, ","); 
+	indexArr[1] = funcIndex;
+	fdIndex = strcspn(message, "^");
+	indexArr[2] = fdIndex; 
+	pathIndex = strcspn(message, ";");
+	indexArr[3] = pathIndex;
+	flagIndex = strcspn(message, "*");
+	indexArr[4] = flagIndex; 
+	bufferIndex = strcspn(message,":");
+	indexArr[5] = bufferIndex;
+	lengthIndex = strcspn(message, "?");
+	indexArr[6] = lengthIndex; 
+
+	//Argument values
+
+	char * functionName = (char*)malloc(sizeof(funcIndex + 1));
+	char * fileDes = (char*)malloc(sizeof(fdIndex + 1)); 
+	char * path = (char*)malloc(sizeof(pathIndex + 1)); 
+	char * flags = (char*)malloc(sizeof(flagIndex + 1));
+	char * buffer = (char*)malloc(sizeof(bufferIndex + 1));
+	char * length = (char*)malloc(sizeof(lengthindex + 1)); 
+	
+	int i
+ 
+	for(i = 0; i < 6; i++) {
+		if(indexArr[i+1] - indexArr[i] != 1) {
+			switch(i) {
+				case 0:
+					strncpy(functionName, message[0], indexArr[1] - indexArr[0]);
+					strcat(functionName, "\0");  
+					break; 		
+				case 1:
+					strncpy(fileDes, message[indexArr[1] + 1], indexArr[2] - indexArr[1]);
+					strcat(fileDes, "\0");
+					break;  
+				case 2:
+					strncpy(path, message[indexArr[2] + 1], indexArr[3] - indexArr[2]);
+					strcat(path, "\0");
+					break; 
+				case 3:
+					strncpy(flags, message[indexArr[3] + 1], indexArr[4] - indexArr[3]);
+					strcat(flags, "\0");
+					break;
+				case 4:
+					strncpy(buffer, message[indexArr[4] + 1], indexArr[5] - indexArr[4]);
+					strcat(buffer, "\0");
+					break;
+				case 5: 
+					strncpy(length, message[indexArr[5] + 1], indexArr[6] - indexArr[5]); 
+					strcat(length, "\0");
+					break;
+			}
+		} else {
+			
+			//Otherwise I need to signal that the argument is empty.
+			
+			 switch(i) {
+                                case 0:
+                                        strncpy(functionName, "empty", 5);
+                                        break;
+                                case 1:
+                                        strncpy(fileDes,  "empty", 5);
+                                        strcat(fileDes, "\0");
+                                        break;
+                                case 2:
+                                        strncpy(path,  "empty", 5);
+                                        strcat(path, "\0");
+                                        break;
+                                case 3:
+                                        strncpy(flags,  "empty", 5);
+                                        strcat(flags, "\0");
+                                        break;
+                                case 4:
+                                        strncpy(buffer,  "empty", 5);
+                                        strcat(buffer, "\0");
+                                        break;
+                                case 5:
+                                        strncpy(length,  "empty", 5);
+                                        strcat(length, "\0");
+                                        break;
+                        }
+		}
+	
+
+	}
+
+		  
+}
+
 
 int readFromSocket(int socket, clientInfo * client) {
-	int buffer[4];
-	memset(buffer,0, sizeof(buffer)); 
-
-	read(socket, buffer, sizeof(buffer)); 
-	client->commands->functionType = buffer[0];
-	client->commands->flag = buffer[1];
-	client->commands->size = buffer[2]; 
 
 	//For testing purposes: 
 	printf("This is the buffer received from the client: %s\n", buffer);
