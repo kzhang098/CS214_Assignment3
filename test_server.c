@@ -81,7 +81,9 @@ char ** tokenizeMessage(char* message) {
 	char * length = (char*)malloc(sizeof(lengthindex + 1)); 
 	
 	int i
- 
+	int value;  
+
+
 	for(i = 0; i < 6; i++) {
 		if(indexArr[i+1] - indexArr[i] != 1) {
 			switch(i) {
@@ -90,23 +92,28 @@ char ** tokenizeMessage(char* message) {
 					strcat(functionName, "\0");  
 					break; 		
 				case 1:
-					strncpy(fileDes, message[indexArr[1] + 1], indexArr[2] - indexArr[1]);
+					value = indexArr[1] + 1;
+					strncpy(fileDes, message[value], indexArr[2] - indexArr[1]);
 					strcat(fileDes, "\0");
 					break;  
 				case 2:
-					strncpy(path, message[indexArr[2] + 1], indexArr[3] - indexArr[2]);
+					value = indexArr[2] + 1;
+					strncpy(path, message[value], indexArr[3] - indexArr[2]);
 					strcat(path, "\0");
 					break; 
 				case 3:
-					strncpy(flags, message[indexArr[3] + 1], indexArr[4] - indexArr[3]);
+					value = indexArr[3] + 1;
+					strncpy(flags, message[value], indexArr[4] - indexArr[3]);
 					strcat(flags, "\0");
 					break;
 				case 4:
-					strncpy(buffer, message[indexArr[4] + 1], indexArr[5] - indexArr[4]);
+					value = indexArr[4] + 1;
+					strncpy(buffer, message[value], indexArr[5] - indexArr[4]);
 					strcat(buffer, "\0");
 					break;
 				case 5: 
-					strncpy(length, message[indexArr[5] + 1], indexArr[6] - indexArr[5]); 
+					value = indexArr[5] + 1;
+					strncpy(length, message[value], indexArr[6] - indexArr[5]); 
 					strcat(length, "\0");
 					break;
 			}
@@ -208,8 +215,9 @@ int main(int argc, char ** argv) {
 	} 
 
 	listen(sockfd, 1);
-		
+	int i; 	
 	int clientNum = 0;
+	
 	while (1) {
 		while(i < 10) {
 			clilen = sizeof(cli_addr);
@@ -220,12 +228,12 @@ int main(int argc, char ** argv) {
 			} else {
 				clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
 				cInfo->socketId = (int*) malloc(sizeof(int));
-				*(cData->socketId) = newsockfd; //Stores the socket into the struct. 
-				cData->clientId = i; 
-				cData->commands = (packetData*)malloc(sizeof(packetData)); 
+				*(cInfo->socketId) = newsockfd; //Stores the socket into the struct. 
+				cInfo->clientId = i; 
+				cInfo->commands = (packetData*)malloc(sizeof(packetData)); 
 			}
 			
-			flag = pthread_create(&clients[i], NULL, (void*)runCommands, cData);  //Starts a new thread with the created struct 
+			flag = pthread_create(&clients[i], NULL, (void*)runCommands, cInfo);  //Starts a new thread with the created struct 
 			
 			if(flag == 1) {
 
