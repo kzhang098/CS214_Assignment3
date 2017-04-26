@@ -1,7 +1,5 @@
 #include "libnetfiles.h"
 
-static int serverInitialized = 0;
-
 char * callServer(int sockfd, char * buffer) {
 	int n = write(sockfd, buffer, strlen(buffer));
 	if(n < 0) {
@@ -65,11 +63,13 @@ int openSocket(char * hostname) {
 }
 
 int netserverinit(char * hostname) {
-	int sockfd = opensocket(hostname);
+	int sockfd = openSocket(hostname);
 	if (sockfd == -1) {
 		return -1;
 	}
 	serverInitialized = 1;
+	IPaddress = malloc(strlen(hostname));
+	IPaddress = hostname;
 	close(sockfd);
 	return 0;
 }
@@ -79,7 +79,7 @@ int netopen(const char *path, int oflags) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
-	opensocket("localhost");
+	int sockfd = openSocket(IPaddress);
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
@@ -109,7 +109,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
-	opensocket("localhost");
+	int sockfd = openSocket(IPaddress);
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -137,7 +137,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
-	opensocket("localhost");
+	int sockfd = openSocket(IPaddress);
 	char * fd = malloc(64);
 	sprintf(fd, "%d", fildes);
 	char * finalMessage = malloc(strlen(fd) + 200);
@@ -165,7 +165,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
-	opensocket("localhost");
+	int sockfd = openSocket(IPaddress);
 	char * fdes = malloc(64);
 	sprintf(fdes, "%d", fd);
 	char * finalMessage = malloc(strlen(fdes) + 10);
