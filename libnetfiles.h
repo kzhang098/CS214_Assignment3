@@ -11,6 +11,7 @@
 
 static int serverInitialized = 0;
 static char * IPaddress;
+static int sockfd;
 
 int openSocket(char * hostname);
 char * callServer(int sockfd, char * buffer);
