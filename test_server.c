@@ -186,7 +186,7 @@ int main(int argc, char ** argv) {
 
 	int sockfd; //Stands for socket file descriptor
 	int newsockfd;
-	int portNum; 
+	int portNum = 9000; 
 	int n; 
 	int clilen;
 	
@@ -203,7 +203,6 @@ int main(int argc, char ** argv) {
 	}
 
 	memset(&serv_addr, 0, sizeof(serv_addr)); 
-	portNum = atoi(argv[1]); 
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY; 
@@ -215,13 +214,13 @@ int main(int argc, char ** argv) {
 		exit(1);
 	} 
 	
-	listen(sockfd, 1);
+
 	int i = 0; 	
 	int clientNum = 0;
 	
 	while (1) {
 		while(i < 10) {
-
+			listen(sockfd, 1);
 			int flag = 1;
 			clilen = sizeof(cli_addr);
 			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
@@ -250,8 +249,10 @@ int main(int argc, char ** argv) {
 
 			printf("This is the message: %s\n", buffer);
 		
-			pthread_join(flag, NULL);
+//			pthread_join(clients[i], NULL);
+			printf("Joined threads\n");
 			close(newsockfd);
+			printf("Closed socket\n");
 			close(sockfd); 
 		}
 	}
