@@ -149,9 +149,9 @@ int netopen(const char *path, int oflags) {
 	char * finalMessage = malloc(15 + strlen(path));
 	createMessage(finalMessage, "open", -1, path, oflags, NULL, 0);
 	printf("%s\n", finalMessage);
-	callServer(sockfd, finalMessage);
+	int fd = atoi(callServer(sockfd, finalMessage));
 	close(sockfd);
-	return 0; 
+	return fd; 
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
