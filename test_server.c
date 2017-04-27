@@ -220,6 +220,7 @@ int main(int argc, char ** argv) {
 	
 	while (1) {
 		while(i < 10) {
+			
 			listen(sockfd, 1);
 			int flag = 1;
 			clilen = sizeof(cli_addr);
@@ -250,10 +251,6 @@ int main(int argc, char ** argv) {
 			printf("This is the message: %s\n", buffer);
 		
 //			pthread_join(clients[i], NULL);
-			printf("Joined threads\n");
-			close(newsockfd);
-			printf("Closed socket\n");
-			close(sockfd); 
 		}
 	}
 	return 0; 

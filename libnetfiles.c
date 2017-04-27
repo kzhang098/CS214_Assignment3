@@ -8,12 +8,12 @@ char * callServer(int sockfd, char * buffer) {
 	}
 
 	bzero(buffer,256);
-	n = read(sockfd,buffer,255); 
+//	n = read(sockfd,buffer,255); 
 	
-	if(n < 0) {
+/*	if(n < 0) {
 		printf("Error reading from socket");
 		exit(1); 
-	}
+	}*/
 	
 	printf("%s\n", buffer); 
 	return buffer;
@@ -135,7 +135,6 @@ int netopen(const char *path, int oflags) {
 	createMessage(finalMessage, "open", -1, path, oflags, NULL, 0);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
-	close(sockfd);
 	return 0; 
 }
 
@@ -148,7 +147,6 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	createMessage(finalMessage, "read", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
-	close(sockfd);
 	return 0;
 }
 
@@ -161,7 +159,6 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
-	close(sockfd);
 	return 0;
 }
 
@@ -174,6 +171,5 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "read", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
-	close(sockfd);
 	return 0;
  }
