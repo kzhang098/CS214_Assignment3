@@ -260,6 +260,7 @@ int main(int argc, char ** argv) {
 					n = write(newsockfd, strfd, 255); 
 				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 					printf("Reading\n");
+					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
 					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
 					int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
 					char * strread = malloc(64);
@@ -269,6 +270,7 @@ int main(int argc, char ** argv) {
 					n = write(newsockfd, returnMessage, strlen(returnMessage)); 
 				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 					printf("Writing\n");
+					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
 					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
 					char * strwritten = malloc(64);
 					sprintf(strwritten, "%d", written);
