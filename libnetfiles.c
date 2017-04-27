@@ -68,8 +68,7 @@ void error(char * error_msg) {
 	perror(error_msg);
 	exit(1); 
 }
-
-int netserverinit(char * hostname) {
+int openSocket(char * hostname) {
 	int portNum = 9000;	//Port number the client communicates on. 
 	int n;	
 	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
@@ -117,8 +116,18 @@ int netserverinit(char * hostname) {
 		printf("Error connecting...");
 		return -1;
 	} 
-	printf("Success\n");
+	printf("Success\n");	
+	return 0;
+}
+
+int netserverinit(char * hostname) {
+	IPaddress = malloc(strlen(hostname));
+	IPaddress = hostname;
+	if (openSocket(IPaddress) == -1) {
+		return -1;
+	}
 	serverInitialized = 1;
+	close(sockfd);
 	return 0;
 }
 
@@ -127,6 +136,7 @@ int netopen(const char *path, int oflags) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	openSocket(IPaddress);
 	if (oflags != 0 && oflags != 1 && oflags != 2) {
 		printf("Invalid flags.\n");
 		return;
@@ -135,6 +145,7 @@ int netopen(const char *path, int oflags) {
 	createMessage(finalMessage, "open", -1, path, oflags, NULL, 0);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
+	close(sockfd);
 	return 0; 
 }
 
@@ -143,10 +154,12 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	openSocket(IPaddress);
 	char * finalMessage = malloc(264);
 	createMessage(finalMessage, "read", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
+	close(sockfd);
 	return 0;
 }
 
@@ -155,10 +168,12 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	openSocket(IPaddress);
 	char * finalMessage = malloc(164 + strlen(buf));
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
+	close(sockfd);
 	return 0;
 }
 
@@ -167,9 +182,11 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 		printf("HOST NOT FOUND\n");
 		return -1;
 	}
+	openSocket(IPaddress);
 	char * finalMessage = malloc(64);
 	createMessage(finalMessage, "read", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
+	close(sockfd);
 	return 0;
  }

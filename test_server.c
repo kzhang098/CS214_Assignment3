@@ -250,7 +250,6 @@ int main(int argc, char ** argv) {
 
 			printf("This is the message: %s\n", buffer);
 		
-//			pthread_join(clients[i], NULL);
 		}
 	}
 	return 0; 
