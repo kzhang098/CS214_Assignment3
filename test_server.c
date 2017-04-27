@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -161,23 +162,41 @@ char ** tokenizeMessage(char* message) {
 }
 
 
-int readFromSocket(int socket, clientInfo * client) {
+int readFromClient(int * socket, clientInfo * client) {
+	char * buffer[256]; 
+	char ** result = (char **)malloc(6*sizeof(char *)); 
 
-	//For testing purposes: 
-//	printf("This is the buffer received from the client: %s\n", buffer);
+	int success;
 
-	//After which I should be able to parse the data from the packet and store it in the packetData struct. 
+	success = read(*socket, buffer, 255); 
+
+	if(success < 0) {
+		printf("Error reading from socket\n"); 
+		exit(1); //<< Is this correct? 	
+	}	
+
+	result = tokenizeMessage(buffer); //Tokenize the message. 
+
+	//After we retrieve the tokenized message, we want to store the packet information in a struct. 
+		
+
 	return 0; 
 	
 }
 
+//This should write the response to the client. 
+
+
+int writeToClient(int socket) {
+
+	return 0;
+}
 
 //void parseBuffer(char * buffer);
 
 int runCommands(clientInfo * client) {
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
-	
-	readFromSocket(*socket, client); 
+	readFromClient(socket, client); 
 	
 	return 0; 
 }
