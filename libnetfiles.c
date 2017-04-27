@@ -69,7 +69,7 @@ void error(char * error_msg) {
 	exit(1); 
 }
 int openSocket(char * hostname) {
-	int portNum = 9000;	//Port number the client communicates on. 
+	int portNum = 9001;	//Port number the client communicates on. 
 	int n;	
 	struct hostent * server; //For the hostname of the server. Store IP and Hostname. 
 	struct sockaddr_in serv_addr; //This is the struct we will use to start the connection. Will contain info from hostent * server
@@ -125,6 +125,11 @@ int netserverinit(char * hostname) {
 	IPaddress = hostname;
 	if (openSocket(IPaddress) == -1) {
 		return -1;
+	}
+	int n = write(sockfd, "Initializing", 12);
+	if(n < 0) {
+		printf("Error writing to socket...");
+		exit(1);	
 	}
 	serverInitialized = 1;
 	close(sockfd);

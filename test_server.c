@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,27 +94,27 @@ char ** tokenizeMessage(char* message) {
 					break; 		
 				case 1:
 					value = indexArr[1] + 1;
-					strncpy(fileDes, &message[value], indexArr[2] - indexArr[1]);
+					strncpy(fileDes, &message[value], indexArr[2] - indexArr[1] - 1);
 					strcat(fileDes, "\0");
 					break;  
 				case 2:
 					value = indexArr[2] + 1;
-					strncpy(path, &message[value], indexArr[3] - indexArr[2]);
+					strncpy(path, &message[value], indexArr[3] - indexArr[2] - 1);
 					strcat(path, "\0");
 					break; 
 				case 3:
 					value = indexArr[3] + 1;
-					strncpy(flags, &message[value], indexArr[4] - indexArr[3]);
+					strncpy(flags, &message[value], indexArr[4] - indexArr[3] - 1);
 					strcat(flags, "\0");
 					break;
 				case 4:
 					value = indexArr[4] + 1;
-					strncpy(buffer, &message[value], indexArr[5] - indexArr[4]);
+					strncpy(buffer, &message[value], indexArr[5] - indexArr[4] - 1);
 					strcat(buffer, "\0");
 					break;
 				case 5: 
 					value = indexArr[5] + 1;
-					strncpy(length, &message[value], indexArr[6] - indexArr[5]); 
+					strncpy(length, &message[value], indexArr[6] - indexArr[5] - 1); 
 					strcat(length, "\0");
 					break;
 			}
@@ -162,41 +161,23 @@ char ** tokenizeMessage(char* message) {
 }
 
 
-int readFromClient(int * socket, clientInfo * client) {
-	char * buffer[256]; 
-	char ** result = (char **)malloc(6*sizeof(char *)); 
+int readFromSocket(int socket, clientInfo * client) {
 
-	int success;
+	//For testing purposes: 
+//	printf("This is the buffer received from the client: %s\n", buffer);
 
-	success = read(*socket, buffer, 255); 
-
-	if(success < 0) {
-		printf("Error reading from socket\n"); 
-		exit(1); //<< Is this correct? 	
-	}	
-
-	result = tokenizeMessage(buffer); //Tokenize the message. 
-
-	//After we retrieve the tokenized message, we want to store the packet information in a struct. 
-		
-
+	//After which I should be able to parse the data from the packet and store it in the packetData struct. 
 	return 0; 
 	
 }
 
-//This should write the response to the client. 
-
-
-int writeToClient(int socket) {
-
-	return 0;
-}
 
 //void parseBuffer(char * buffer);
 
 int runCommands(clientInfo * client) {
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
-	readFromClient(socket, client); 
+	
+	readFromSocket(*socket, client); 
 	
 	return 0; 
 }
@@ -205,7 +186,7 @@ int main(int argc, char ** argv) {
 
 	int sockfd; //Stands for socket file descriptor
 	int newsockfd;
-	int portNum = 9000; 
+	int portNum = 9001; 
 	int n; 
 	int clilen;
 	
@@ -230,6 +211,7 @@ int main(int argc, char ** argv) {
 	int status = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 	if(status < 0) {
 		printf("Error binding to client");
+		close(sockfd);
 		exit(1);
 	} 
 	
@@ -266,9 +248,12 @@ int main(int argc, char ** argv) {
 		
 			memset(buffer,0, 256); 
 			n = read(newsockfd, buffer, 255); 
-
+			
 			printf("This is the message: %s\n", buffer);
-		
+			if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
+				char ** tokenizedBuffer = tokenizeMessage(buffer);
+				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
+			}
 		}
 	}
 	return 0; 
