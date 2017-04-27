@@ -177,9 +177,9 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	char * finalMessage = malloc(164 + strlen(buf));
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
-	callServer(sockfd, finalMessage);
+	int byteswritten = atoi(callServer(sockfd, finalMessage));
 	close(sockfd);
-	return 0;
+	return byteswritten;
 }
 
  int netclose(int fd) {
@@ -191,7 +191,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	char * finalMessage = malloc(64);
 	createMessage(finalMessage, "close", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
-	callServer(sockfd, finalMessage);
+	int success = atoi(callServer(sockfd, finalMessage));
 	close(sockfd);
-	return 0;
+	return success;
  }

@@ -261,10 +261,12 @@ int main(int argc, char ** argv) {
 				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 					printf("Reading\n");
 					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
-					read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+					int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+					char * strread = malloc(64);
+					sprintf(strread, "%d", bytesread);
 					char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
-					sprintf(returnMessage, "%s^%s", readBuffer, tokenizedBuffer[4]);
-					n = write(newsockfd, returnMessage, strlen(readBuffer)); 
+					sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
+					n = write(newsockfd, returnMessage, strlen(returnMessage)); 
 				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 					printf("Writing\n");
 					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
