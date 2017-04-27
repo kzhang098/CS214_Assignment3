@@ -189,7 +189,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	}
 	openSocket(IPaddress);
 	char * finalMessage = malloc(64);
-	createMessage(finalMessage, "read", fd, NULL, -1, NULL, 0);
+	createMessage(finalMessage, "close", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
 	callServer(sockfd, finalMessage);
 	close(sockfd);
