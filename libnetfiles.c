@@ -8,14 +8,14 @@ char * callServer(int sockfd, char * buffer) {
 	}
 
 	bzero(buffer,256);
-//	n = read(sockfd,buffer,255); 
+	n = read(sockfd,buffer,255); 
 	
-/*	if(n < 0) {
+	if(n < 0) {
 		printf("Error reading from socket");
 		exit(1); 
-	}*/
+	}
 	
-	printf("%s\n", buffer); 
+	printf("Returned %s\n", buffer); 
 	return buffer;
 }
 	

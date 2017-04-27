@@ -252,6 +252,32 @@ int main(int argc, char ** argv) {
 			printf("This is the message: %s\n", buffer);
 			if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
 				char ** tokenizedBuffer = tokenizeMessage(buffer);
+				if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
+					printf("Opening\n");
+					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
+					char * strfd = malloc(64);
+					sprintf(strfd, "%d", fd);
+					n = write(newsockfd, strfd, 255); 
+				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
+					printf("Reading\n");
+					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
+					read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+					char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
+					sprintf(returnMessage, "%s^%s", readBuffer, tokenizedBuffer[4]);
+					n = write(newsockfd, returnMessage, strlen(readBuffer)); 
+				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
+					printf("Writing\n");
+					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+					char * strwritten = malloc(64);
+					sprintf(strwritten, "%d", written);
+					n = write(newsockfd, strwritten, strlen(strwritten)); 
+				} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
+					printf("Closing\n");
+					int success = close(-1 * atoi(tokenizedBuffer[1]));
+					char * strsuccess = malloc(5);
+					sprintf(strsuccess, "%d", success);
+					n = write(newsockfd, strsuccess, 255); 
+				}
 				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			}
 		}

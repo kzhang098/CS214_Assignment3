@@ -7,7 +7,7 @@
 int main(int argc, char ** argv) {
 	//Get standard input. The default number of bytes to read is 256.
 	netserverinit(argv[1]);
-	netopen("FUCK YOU", 0);
+	netopen("./Hints.txt", 0);
 	netread(-384, "Yeh", 12);
 	netwrite(-384, "Yeh", 12);
 	netclose(-384);
