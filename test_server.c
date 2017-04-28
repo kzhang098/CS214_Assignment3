@@ -6,7 +6,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
-
+#include <errno.h> 
+#include "libnetfiles.c"
 /*
 *GLOBAL VARIABLES
 */
@@ -48,6 +49,9 @@ typedef struct clientInfo {
 // " , " : Function 
 // " ^ " : 
 // 
+
+
+
 
 char ** tokenizeMessage(char* message) {
 	
@@ -160,12 +164,11 @@ char ** tokenizeMessage(char* message) {
 	return result;
 }
 
-//void parseBuffer(char * buffer);
-
 int runCommands(clientInfo * client) {
 	
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
 	char buffer[256]; 
+	char * error = (char*)malloc(64);
 	
 	int n; 
 	
@@ -176,11 +179,33 @@ int runCommands(clientInfo * client) {
 	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
 		char ** tokenizedBuffer = tokenizeMessage(buffer);
 			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
-				printf("Opening\n");
-				int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
-				char * strfd = malloc(64);
-				sprintf(strfd, "%d", fd);
-				n = write(*socket, strfd, 255); 
+				
+				//Check file existence. 
+				File * file;
+				file = fopen(tokenizedBuffer[0],"r")
+				if(file == NULL) {
+					sprintf(error, "%d", 4);
+					write(*socket, error, 255); 
+				} 
+				//Check if path is a directory. If so, then write 3 which represents EISDIR error
+				
+				if(isDir(tokenizedBuffer[2]) == 1) {
+					sprintf(error, "%d", 3);
+					write(*socket, error, 255); 
+				}
+			
+				if(access(tokenizedBuffer[2], R_OK)) {
+					printf("Opening\n");
+					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
+					char * strfd = malloc(64);
+					sprintf(strfd, "%d", fd);
+					n = write(*socket, strfd, 255); 
+				} else {
+				
+					//The file does not have read permission. Throw error. 
+					sprintf(error,"%d", 1); 
+					write(*socket, error, 255); 
+				} 
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 				printf("Reading\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);

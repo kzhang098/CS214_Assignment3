@@ -1,5 +1,74 @@
 #include "libnetfiles.h"
 
+// NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
+
+/*
+* This function checks whether the given path leads to a file or directory. It returns 1 if the given path leads
+* to a directory, 0 if the given path leads to a file, and -1 otherwise.
+*/
+int isDir(char * path) {
+        struct stat buf;
+        stat(path, &buf);
+
+		// Returns 1 if the path leads to a directory
+        if(S_ISDIR(buf.st_mode) == 1) {
+            return 1;
+		// Returns 0 if the path leads to a file
+        } else if(S_ISREG(buf.st_mode) == 1) {
+            return 0;
+		// Returns -1 otherwise
+        } else {
+            return -1;
+        }
+
+	return S_ISDIR(buf.st_mode);
+}
+
+//Still need to add 2,5. 
+
+void handleError(int function, int response) {
+	if(function == 0) { //Open 
+		switch(response) {
+			case 1: //EACCES
+				printf("EACCESS error. Missing read file permission"\n);
+				exit(1); 
+			case 2: //EINTR Interrupted function call; an asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
+				printf("EINTR error. Please try again"); 
+				exit(1); 
+			case 3: //EISDIR
+				printf("EISDIR error. Specified path is a directory"); 
+				exit(1); 
+			case 4: //ENOENT
+				printf("ENOENT error. Specified file does not exist"); 
+				exit(1);
+			case 5: //EROFS An attempt was made to modify something on a read-only file system.
+				printf("EROFS error. You attempted to modify a read-only file system"); 
+				exit(1);
+			default:
+				break; 
+		}
+	} else if (function == 1 || funnction == 2) { //Read and write. They have the same errors. 
+		switch(response) {
+			case 1: //EBADF
+			
+			case 2: // ETIMEOUT
+			
+			case 3: //ECONNRESET
+			
+			default:
+				break; 
+		}
+	} else if (function == 3) { //Close 
+		switch(response) 
+			case 1: //EBADF
+			
+			default: 
+				break; 
+	}
+
+}
+
+
 char * callServer(int sockfd, char * buffer) {
 	int n = write(sockfd, buffer, strlen(buffer));
 	if(n < 0) {
@@ -8,8 +77,9 @@ char * callServer(int sockfd, char * buffer) {
 	}
 
 	bzero(buffer,256);
+	printf("Reading...\n"); 
 	n = read(sockfd,buffer,255); 
-	
+	printf("Stuck...\n");
 	if(n < 0) {
 		printf("Error reading from socket");
 		exit(1); 
@@ -150,11 +220,17 @@ int netopen(const char *path, int oflags) {
 	createMessage(finalMessage, "open", -1, path, oflags, NULL, 0);
 	printf("%s\n", finalMessage);
 	int fd = atoi(callServer(sockfd, finalMessage));
+	
+	handleError(1,fd); // Will do nothing if nothing is wrong
+	
+	printf("closing?\n");
 	close(sockfd);
+	printf("closed\n");
 	return fd; 
 }
 
 ssize_t netread(int fildes, void *buf, size_t nbyte) {
+	printf("Entering netread \n");
 	if (serverInitialized == 0) {
 		printf("HOST NOT FOUND\n");
 		return -1;
@@ -163,7 +239,8 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	char * finalMessage = malloc(264);
 	createMessage(finalMessage, "read", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
-	callServer(sockfd, finalMessage);
+	int response = callServer(sockfd, finalMessage);
+	handleError(2,response);
 	close(sockfd);
 	return 0;
 }
@@ -178,6 +255,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	int byteswritten = atoi(callServer(sockfd, finalMessage));
+	handleError(3, bytesWritten); 
 	close(sockfd);
 	return byteswritten;
 }
@@ -192,6 +270,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "close", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
 	int success = atoi(callServer(sockfd, finalMessage));
+	handleError(4, success); 
 	close(sockfd);
 	return success;
  }
