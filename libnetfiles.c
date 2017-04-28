@@ -238,10 +238,24 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	char * finalMessage = malloc(264);
 	createMessage(finalMessage, "read", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
-	int response = callServer(sockfd, finalMessage);
-	handleError(2,response);
+	char * response = callServer(sockfd, finalMessage);
+	char * token = strtok(response, "^");
+
+	int i= 0;
+ 
+	while(i < 3 && token != NULL) {
+		
+		printf("%s\n",token);
+		if(i + 1 < 3) 
+			token = strtok(NULL, "^");
+		i++;
+	}
+
+	//handleError(2,response);
 	close(sockfd);
-	return 0;
+	i = atoi(token); 
+	printf("%d\n",i);
+	return i;
 }
 
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
