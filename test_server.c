@@ -173,7 +173,7 @@ int runCommands(clientInfo * client) {
 	int n; 
 	
 	memset(buffer,0, 256); 
-    n = read(*socket, buffer, 255); 
+    	n = read(*socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
 	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -181,8 +181,8 @@ int runCommands(clientInfo * client) {
 			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
 				
 				//Check file existence. 
-				File * file;
-				file = fopen(tokenizedBuffer[0],"r")
+				FILE * file;
+				file = fopen(tokenizedBuffer[0],"r");
 				if(file == NULL) {
 					sprintf(error, "%d", 4);
 					write(*socket, error, 255); 

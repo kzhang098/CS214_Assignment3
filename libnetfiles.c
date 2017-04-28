@@ -1,6 +1,5 @@
 #include "libnetfiles.h"
 
-// NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
 
 /*
 * This function checks whether the given path leads to a file or directory. It returns 1 if the given path leads
@@ -24,13 +23,13 @@ int isDir(char * path) {
 	return S_ISDIR(buf.st_mode);
 }
 
-//Still need to add 2,5. 
+// NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
 
 void handleError(int function, int response) {
 	if(function == 0) { //Open 
 		switch(response) {
 			case 1: //EACCES
-				printf("EACCESS error. Missing read file permission"\n);
+				printf("EACCESS error. Missing read file permission\n");
 				exit(1); 
 			case 2: //EINTR Interrupted function call; an asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
 				printf("EINTR error. Please try again"); 
@@ -47,7 +46,7 @@ void handleError(int function, int response) {
 			default:
 				break; 
 		}
-	} else if (function == 1 || funnction == 2) { //Read and write. They have the same errors. 
+	} else if (function == 1 || function == 2) { //Read and write. They have the same errors. 
 		switch(response) {
 			case 1: //EBADF
 			
@@ -255,7 +254,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	int byteswritten = atoi(callServer(sockfd, finalMessage));
-	handleError(3, bytesWritten); 
+	handleError(3, byteswritten); 
 	close(sockfd);
 	return byteswritten;
 }
