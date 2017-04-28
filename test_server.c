@@ -182,12 +182,15 @@ int runCommands(clientInfo * client) {
 			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
 				
 				//Check file existence. 
+				
+				/*
 				FILE * file;
 				file = fopen(tokenizedBuffer[0],"r");
 				if(file == NULL) {
 					sprintf(error, "%d", 4);
 					write(*socket, error, 255); 
 				} 
+				*/
 				//Check if path is a directory. If so, then write 3 which represents EISDIR error
 				
 				if(isDir(tokenizedBuffer[2]) == 1) {
@@ -195,37 +198,40 @@ int runCommands(clientInfo * client) {
 					write(*socket, error, 255); 
 				}
 			
-				if(access(tokenizedBuffer[2], R_OK)) {
+				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
 					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
 					n = write(*socket, strfd, 255); 
+				/*
 				} else {
 				
 					//The file does not have read permission. Throw error. 
 					sprintf(error,"%d", 1); 
 					write(*socket, error, 255); 
 				} 
+				*/
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 				printf("Reading\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
 				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
 				
-				pthread_rwlock_rdlock(&rwlock);
+				//pthread_rwlock_rdlock(&rwlock);
 				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
-				pthread_rwlock_unlock(&rwlock); 
+				//pthread_rwlock_unlock(&rwlock); 
 				char * strread = malloc(64);
 				sprintf(strread, "%d", bytesread);
 				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
 				sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
+				printf("PRINTING %s\n", returnMessage);  
 				n = write(*socket, returnMessage, strlen(returnMessage)); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
-				pthread_rwlock_rdlock(&rwlock);
+				//pthread_rwlock_rdlock(&rwlock);
 				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
-				pthread_rwlock_unlock(&rwlock); 
+				//pthread_rwlock_unlock(&rwlock); 
 				//printf("%s\n", tokenizedBuffer[4]); 
 				char * strwritten = malloc(64);
 				sprintf(strwritten, "%d", written);
