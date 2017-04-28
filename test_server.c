@@ -169,7 +169,8 @@ int runCommands(clientInfo * client) {
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
 	char buffer[256]; 
 	char * error = (char*)malloc(64);
-	
+	pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER; 	
+
 	int n; 
 	
 	memset(buffer,0, 256); 
@@ -210,7 +211,10 @@ int runCommands(clientInfo * client) {
 				printf("Reading\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
 				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
+				
+				pthread_rwlock_rdlock(&rwlock);
 				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+				pthread_rwlock_unlock(&rwlock); 
 				char * strread = malloc(64);
 				sprintf(strread, "%d", bytesread);
 				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
@@ -219,7 +223,10 @@ int runCommands(clientInfo * client) {
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
+				pthread_rwlock_rdlock(&rwlock);
 				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				pthread_rwlock_unlock(&rwlock); 
+				//printf("%s\n", tokenizedBuffer[4]); 
 				char * strwritten = malloc(64);
 				sprintf(strwritten, "%d", written);
 				n = write(*socket, strwritten, strlen(strwritten)); 
