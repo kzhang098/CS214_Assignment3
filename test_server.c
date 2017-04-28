@@ -160,25 +160,53 @@ char ** tokenizeMessage(char* message) {
 	return result;
 }
 
-
-int readFromSocket(int socket, clientInfo * client) {
-
-	//For testing purposes: 
-//	printf("This is the buffer received from the client: %s\n", buffer);
-
-	//After which I should be able to parse the data from the packet and store it in the packetData struct. 
-	return 0; 
-	
-}
-
-
 //void parseBuffer(char * buffer);
 
 int runCommands(clientInfo * client) {
+	
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
+	char buffer[256]; 
 	
-	readFromSocket(*socket, client); 
+	int n; 
 	
+	memset(buffer,0, 256); 
+    n = read(*socket, buffer, 255); 
+	printf("This is the message: %s\n", buffer);
+			
+	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
+		char ** tokenizedBuffer = tokenizeMessage(buffer);
+			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
+				printf("Opening\n");
+				int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
+				char * strfd = malloc(64);
+				sprintf(strfd, "%d", fd);
+				n = write(*socket, strfd, 255); 
+			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
+				printf("Reading\n");
+				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
+				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
+				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+				char * strread = malloc(64);
+				sprintf(strread, "%d", bytesread);
+				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
+				sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
+				n = write(*socket, returnMessage, strlen(returnMessage)); 
+			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
+				printf("Writing\n");
+				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
+				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				char * strwritten = malloc(64);
+				sprintf(strwritten, "%d", written);
+				n = write(*socket, strwritten, strlen(strwritten)); 
+			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
+				printf("Closing\n");
+				int success = close(-1 * atoi(tokenizedBuffer[1]));
+				char * strsuccess = malloc(5);
+				sprintf(strsuccess, "%d", success);
+				n = write(*socket, strsuccess, 255); 
+			}
+			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
+		}
 	return 0; 
 }
 
@@ -192,8 +220,6 @@ int main(int argc, char ** argv) {
 	
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr; 
-
-	char buffer[256];
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 
@@ -227,24 +253,27 @@ int main(int argc, char ** argv) {
 			clilen = sizeof(cli_addr);
 			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 			
+			printf("%d\n", newsockfd);
+			
 			if(newsockfd < 0) {
 				printf("Could not accept connection from client"); 
 			} else {
 				clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
 				cInfo->socketId = (int*) malloc(sizeof(int));
-				*(cInfo->socketId) = newsockfd; //Stores the socket into the struct. 
+				cInfo->socketId = &newsockfd; //Stores the socket into the struct. 
 				cInfo->clientId = i; 
 				cInfo->commands = (packetData*)malloc(sizeof(packetData)); 
-				flag = pthread_create(&clients[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct 
+				flag = pthread_create(&clients[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
+				printf("%d\n", newsockfd); 
 			}
 			
-
-			
 			if(flag == 1) {
-
+				printf("Hi...\n"); 
 			} else if (flag == 0) {
 				i++; 
 			}
+		
+			/*
 		
 			memset(buffer,0, 256); 
 			n = read(newsockfd, buffer, 255); 
@@ -284,6 +313,7 @@ int main(int argc, char ** argv) {
 				}
 				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			}
+			*/
 		}
 	}
 	return 0; 
