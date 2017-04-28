@@ -8,6 +8,9 @@
 #include <sys/fcntl.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
 
 static int serverInitialized = 0;
 static char * IPaddress;
