@@ -89,7 +89,7 @@ int isDir(char * path) {
 
 
 char * callServer(int sockfd, char * buffer) {
-	int n = write(sockfd, buffer, strlen(buffer));
+	int n = send(sockfd, buffer, strlen(buffer), 0);
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
@@ -97,13 +97,13 @@ char * callServer(int sockfd, char * buffer) {
 
 	bzero(buffer,256);
 	printf("Reading...\n"); 
-	n = read(sockfd,buffer,255); 
+	n = recv(sockfd,buffer,255, 0); 
 	printf("Stuck...\n");
 	if(n < 0) {
 		char * error = malloc(100);
-		errno = ECONNRESET;
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	}
 	if (buffer[0] == '^') {
@@ -112,6 +112,7 @@ char * callServer(int sockfd, char * buffer) {
 		errno = atoi(error);
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	}
 	printf("Returned %s\n", buffer); 
@@ -165,6 +166,7 @@ void createMessage(char * finalMessage, char * func, int fildes, const char * pa
 	
 void error(char * error_msg) {
 	perror(error_msg);
+	printf("Error: %s\n", strerror(errno));
 	exit(1); 
 }
 int openSocket(char * hostname) {
@@ -215,9 +217,9 @@ int openSocket(char * hostname) {
 
 	if(status < 0) {
 		char * error = malloc(100);
-		errno = ECONNRESET;
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	} 
 	printf("Success\n");	
@@ -231,7 +233,7 @@ int netserverinit(char * hostname) {
 		printf("Error initializing");
 		return -1;
 	}
-	int n = write(sockfd, "Initializing", 12);
+	int n = send(sockfd, "Initializing", 12, 0);
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
