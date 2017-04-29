@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <errno.h> 
 #include "libnetfiles.c"
+
 /*
 *GLOBAL VARIABLES
 */
@@ -37,10 +38,8 @@ typedef struct clientInfo {
 	packetData * commands;
 } clientInfo;
 
-
 /*
 * THE BELOW FUNCTIONS SHOULD BE MOVED TO LIBNETFILES LATER
-*
 */
 
 //Packet Structure: Function,File Descriptor^File Path;o_flags*buffer:nbyte? 
@@ -48,10 +47,6 @@ typedef struct clientInfo {
 //Tip for delimeters: 
 // " , " : Function 
 // " ^ " : 
-// 
-
-
-
 
 char ** tokenizeMessage(char* message) {
 	
@@ -164,6 +159,7 @@ char ** tokenizeMessage(char* message) {
 	return result;
 }
 
+
 int runCommands(clientInfo * client) {
 	
 	int * socket = client->socketId; // This is the socket we are using to communicate with the client
@@ -201,6 +197,16 @@ int runCommands(clientInfo * client) {
 				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
 					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
+					
+					/*
+
+					if(fd < 0) {
+						printf("Error: %s\n", strerror(errno)); 
+						return -1; 
+					}
+					
+					*/ 
+
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
 					n = write(*socket, strfd, 255); 
@@ -219,6 +225,20 @@ int runCommands(clientInfo * client) {
 				
 				//pthread_rwlock_rdlock(&rwlock);
 				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+				
+				//THIS IS EBADF ERROR
+
+				if(bytesread < 0) {
+					printf("ERROR: %s\n", strerror(errno));
+					char * response = (char*)malloc(64);
+                                        strcat(response, "^");
+                                        strcat(response, errno);
+                                        strcat(response, "\0");
+                                        write(*socket, response, strlen(response));
+					free(response); 
+					return -1;
+				}
+
 				//pthread_rwlock_unlock(&rwlock); 
 				char * strread = malloc(64);
 				sprintf(strread, "%d", bytesread);
@@ -231,6 +251,18 @@ int runCommands(clientInfo * client) {
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
 				//pthread_rwlock_rdlock(&rwlock);
 				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				
+				if(written < 0) {
+					printf("ERROR: %s\n", strerror(errno));
+					char * response = (char*)malloc(64);
+					strcat(response, "^");
+					strcat(response, errno);
+					strcat(response, "\0"); 
+					write(*socket, response, strlen(response)); 
+					free(response); 
+					return -1; 
+				} 
+
 				//pthread_rwlock_unlock(&rwlock); 
 				//printf("%s\n", tokenizedBuffer[4]); 
 				char * strwritten = malloc(64);
@@ -239,6 +271,18 @@ int runCommands(clientInfo * client) {
 			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 				printf("Closing\n");
 				int success = close(-1 * atoi(tokenizedBuffer[1]));
+				
+				//ERROR HANDLING
+				
+				/*
+	
+				if(success < 1) {
+					printf("ERROR: %s\n", strerror(errno));
+					return -1; 
+				}
+		
+				*/
+
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
 				n = write(*socket, strsuccess, 255); 
@@ -283,9 +327,7 @@ int main(int argc, char ** argv) {
 	int i = 0; 	
 	int clientNum = 0;
 	
-	while (1) {
-		while(i < 10) {
-			
+	while (1) {	
 			listen(sockfd, 1);
 			int flag = 1;
 			clilen = sizeof(cli_addr);
@@ -352,7 +394,7 @@ int main(int argc, char ** argv) {
 				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			}
 			*/
-		}
+	
 	}
 	return 0; 
 }
