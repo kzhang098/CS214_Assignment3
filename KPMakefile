@@ -1,0 +1,15 @@
+PROGRAMS = client
+CC = gcc
+
+client: libnetfiles.o test_client.c
+	$(CC) test_client.c libnetfiles.o -o client
+	
+libnetfiles.o: libnetfiles.c
+	gcc -c libnetfiles.c
+	 
+.PHONY: all clean
+
+all: $(PROGRAMS)
+
+clean:
+	@rm -f *.o $(PROGRAMS)

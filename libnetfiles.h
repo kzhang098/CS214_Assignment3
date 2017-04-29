@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include <sys/stat.h>
 #include <dirent.h>
-
+#include <errno.h>
 
 static int serverInitialized = 0;
 static char * IPaddress;

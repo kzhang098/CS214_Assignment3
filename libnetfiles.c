@@ -29,7 +29,7 @@ void handleError(int function, int response) {
 	if(function == 0) { //Open 
 		switch(response) {
 			case 1: //EACCES
-				printf("EACCESS error. Missing read file permission\n");
+				errno = EACCES;
 				exit(1); 
 			case 2: //EINTR Interrupted function call; an asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
 				printf("EINTR error. Please try again"); 
@@ -53,7 +53,10 @@ void handleError(int function, int response) {
 			case 2: // ETIMEOUT
 			
 			case 3: //ECONNRESET
-			
+			errno = ECONNRESET;
+			char * error = malloc(100);
+			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+			perror(error);
 			default:
 				break; 
 		}
@@ -81,6 +84,8 @@ char * callServer(int sockfd, char * buffer) {
 	printf("Stuck...\n");
 	if(n < 0) {
 		printf("Error reading from socket");
+		errno = ECONNRESET;
+		perror("Error on line __LINE__ of __FILE__:");
 		exit(1); 
 	}
 	
