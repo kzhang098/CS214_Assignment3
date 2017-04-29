@@ -8,12 +8,12 @@ int main(int argc, char ** argv) {
 	
 	int i;
 	netserverinit(argv[1]);
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 50; i++) {
 		
 		int fd = netopen("./Hints.txt", 2);
 		netread(fd, "Yeh", 12);
-		netwrite(fd, "This is a test\n", 14);
-		netclose(34214123);
+		netwrite(fd, "This is a test\n", 15);
+		netclose(fd);
 		fd = netopen("./Hints.txt", 2);
 		netread(fd, "Yeh", 12);
 		netwrite(fd, "This is a test\n", 14);

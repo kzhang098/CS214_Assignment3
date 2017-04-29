@@ -154,7 +154,7 @@ void createMessage(char * finalMessage, char * func, int fildes, const char * pa
 			buffer[strlen(buf)] = '\0';
 			finalMessage = strncat(finalMessage, buffer, strlen(buffer));
 		}
-	}
+	} 
 	finalMessage = strncat(finalMessage, ":", 1);
 	if (nbyte != 0) {
 		char * nbytes = malloc(64);

@@ -218,7 +218,9 @@ int runCommands(clientInfo * client) {
 					}
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
-					n = write(*socket, strfd, 255); 
+					printf("Sending\n");
+					n = send(*socket, strfd, 255, 0); 
+					printf("Sent\n");
 				/*
 				} else {
 				
@@ -233,7 +235,7 @@ int runCommands(clientInfo * client) {
 				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
 				
 				//pthread_rwlock_rdlock(&rwlock);
-				int bytesread = recv(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
+				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
 				
 				//THIS IS EBADF ERROR
 
@@ -259,8 +261,8 @@ int runCommands(clientInfo * client) {
 				printf("Writing\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
 				//pthread_rwlock_rdlock(&rwlock);
-				int written = send(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
-				
+				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				printf("Done writing\n");
 				if(written < 0) {
 					printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(64);
@@ -276,7 +278,7 @@ int runCommands(clientInfo * client) {
 				//printf("%s\n", tokenizedBuffer[4]); 
 				char * strwritten = malloc(64);
 				sprintf(strwritten, "%d", written);
-				n = recv(*socket, strwritten, strlen(strwritten),0); 
+				n = send(*socket, strwritten, strlen(strwritten),0); 
 			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 				printf("Closing\n");
 				int success = close(-1 * atoi(tokenizedBuffer[1]));
@@ -300,7 +302,7 @@ int runCommands(clientInfo * client) {
 
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
-				n = sned(*socket, strsuccess, 255,0); 
+				n = send(*socket, strsuccess, 255,0); 
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 		}
@@ -338,13 +340,13 @@ int main(int argc, char ** argv) {
 		exit(1);
 	} 
 	
-
-	int i = 0; 	
+	int i = 0;
 	int clientNum = 0;
+	int flag = 1;
 	
 	while (1) {	
 			listen(sockfd, 1);
-			int flag = 1;
+			flag = 1;
 			clilen = sizeof(cli_addr);
 			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 			
@@ -365,7 +367,7 @@ int main(int argc, char ** argv) {
 			if(flag == 1) {
 				printf("Hi...\n"); 
 			} else if (flag == 0) {
-				i++; 
+				i++;
 			}
 		
 			/*
