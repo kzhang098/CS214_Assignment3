@@ -254,7 +254,7 @@ int runCommands(clientInfo * client) {
 				char * strread = malloc(64);
 				sprintf(strread, "%d", bytesread);
 				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
-				sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
+				sprintf(returnMessage, "%s^%s", readBuffer, strread);
 				printf("PRINTING %s\n", returnMessage);  
 				n = send(*socket, returnMessage, strlen(returnMessage),0); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {

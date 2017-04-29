@@ -286,20 +286,12 @@ ssize_t netread(int fildes, void *buf, size_t nbyte) {
 	printf("%s\n", finalMessage);
 	char * response = callServer(sockfd, finalMessage);
 	char * token = strtok(response, "^");
-
-	int i= 0;
- 
-	while(i < 3 && token != NULL) {
-		
-		printf("%s\n",token);
-		if(i + 1 < 3) 
-			token = strtok(NULL, "^");
-		i++;
-	}
+	char * numbytes = strtok(response, "^");
+	strncpy(buf, token, strlen(token));
 
 	//handleError(2,response);
 	close(sockfd);
-	i = atoi(token); 
+	int i = atoi(numbytes); 
 	printf("%d\n",i);
 	return i;
 }
