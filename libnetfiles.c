@@ -25,7 +25,7 @@ int isDir(char * path) {
 
 // NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
 
-void handleError(int function, int response) {
+/*void handleError(int function, int response) {
 	char * error = malloc(100);
 	if(function == 0) { //Open 
 		switch(response) {
@@ -85,7 +85,7 @@ void handleError(int function, int response) {
 		}
 	}
 
-}
+}*/
 
 
 char * callServer(int sockfd, char * buffer) {
@@ -100,12 +100,18 @@ char * callServer(int sockfd, char * buffer) {
 	n = read(sockfd,buffer,255); 
 	printf("Stuck...\n");
 	if(n < 0) {
-		printf("Error reading from socket");
+		char * error = malloc(100);
 		errno = ECONNRESET;
-		perror("Error on line __LINE__ of __FILE__:");
-		exit(1); 
+		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+		perror(error);
 	}
-	
+	if (buffer[0] == '^') {
+		char * error = malloc(100);
+		strncpy(error, &buffer[1], strlen(buffer) - 1);
+		errno = atoi(error);
+		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+		perror(error);
+	}
 	printf("Returned %s\n", buffer); 
 	return buffer;
 }
@@ -206,8 +212,10 @@ int openSocket(char * hostname) {
 	int status = connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
 
 	if(status < 0) {
-		printf("Error connecting...");
-		return -1;
+		char * error = malloc(100);
+		errno = ECONNRESET;
+		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+		perror(error);
 	} 
 	printf("Success\n");	
 	return 0;
@@ -293,7 +301,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "write", fildes, NULL, -1, buf, nbyte);
 	printf("%s\n", finalMessage);
 	int byteswritten = atoi(callServer(sockfd, finalMessage));
-	handleError(3, byteswritten); 
+	//handleError(3, byteswritten); 
 	close(sockfd);
 	return byteswritten;
 }
@@ -308,7 +316,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte) {
 	createMessage(finalMessage, "close", fd, NULL, -1, NULL, 0);
 	printf("%s\n", finalMessage);
 	int success = atoi(callServer(sockfd, finalMessage));
-	handleError(4, success); 
+	//handleError(4, success); 
 	close(sockfd);
 	return success;
  }
