@@ -237,14 +237,14 @@ int runCommands(clientInfo * client) {
 				//THIS IS EBADF ERROR
 
 				if(bytesread < 0) {
-					printf("ERROR: %s\n", strerror(errno));
-					char * response = (char*)malloc(64);
-                                        strcat(response, "^");
-                                        strcat(response, errno);
-                                        strcat(response, "\0");
-                                        write(*socket, response, strlen(response));
-					free(response); 
-					return -1;
+					printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(64);
+						char* error = malloc(64);
+						sprintf(error, "%d", errno);
+                        strncat(response, "^", 1);
+                        strncat(response, error, strlen(error));
+                        write(*socket, response, strlen(response));
+						return -1;
 				}
 
 				//pthread_rwlock_unlock(&rwlock); 
@@ -261,14 +261,14 @@ int runCommands(clientInfo * client) {
 				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
 				
 				if(written < 0) {
-					printf("ERROR: %s\n", strerror(errno));
-					char * response = (char*)malloc(64);
-					strcat(response, "^");
-					strcat(response, errno);
-					strcat(response, "\0"); 
-					write(*socket, response, strlen(response)); 
-					free(response); 
-					return -1; 
+					printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(64);
+						char* error = malloc(64);
+						sprintf(error, "%d", errno);
+                        strncat(response, "^", 1);
+                        strncat(response, error, strlen(error));
+                        write(*socket, response, strlen(response));
+						return -1;
 				} 
 
 				//pthread_rwlock_unlock(&rwlock); 
@@ -282,14 +282,20 @@ int runCommands(clientInfo * client) {
 				
 				//ERROR HANDLING
 				
-				/*
+				
 	
 				if(success < 1) {
-					printf("ERROR: %s\n", strerror(errno));
-					return -1; 
+					printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(64);
+						char* error = malloc(64);
+						sprintf(error, "%d", errno);
+                        strncat(response, "^", 1);
+                        strncat(response, error, strlen(error));
+                        write(*socket, response, strlen(response));
+						return -1;
 				}
 		
-				*/
+				
 
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);

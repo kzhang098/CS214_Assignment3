@@ -10,10 +10,10 @@ int main(int argc, char ** argv) {
 	netserverinit(argv[1]);
 	for (i = 0; i < 100; i++) {
 		
-		int fd = netopen("./Yeh", 2);
+		int fd = netopen("./Hints.txt", 2);
 		netread(fd, "Yeh", 12);
 		netwrite(fd, "This is a test\n", 14);
-		netclose(fd);
+		netclose(34214123);
 		fd = netopen("./Hints.txt", 2);
 		netread(fd, "Yeh", 12);
 		netwrite(fd, "This is a test\n", 14);
