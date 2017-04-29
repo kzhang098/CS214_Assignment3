@@ -1,0 +1,33 @@
+
+
+Logic for Modes
+
+Transaction Mode: 
+	- Put lock on linked list
+	- Check if the file is open in linked list. 
+		- YES? Can't do it.
+		- NO? Then add to list with filename, mode, flags
+	- Unlock list. 
+
+Exclusive Mode: 
+	- Put lock on linked list
+	- Check if open 
+		YES? Is in transaction mode? 
+			- YES? Can't do anything. 
+			- NO? Is the flag write? 
+				- YES? Then only exclusive read is allowed
+				- NO? Then both ex. read and ex. write are allowed and add entry. 
+		NO? Then add file entry to list with mode and flag. 	
+	- Unlock list
+
+
+Unrestricted Mode: 
+	- Put lock on linked list 
+	- Check if open 
+		YES? Is in transaction mode?  
+			-YES? Can't do anything
+			-NO? Check if exclusive write is mode/flag for the file
+				-YES? Client can only read
+				-NO? Add entry file name, mode, flag to list.  
+		NO? Then add file entry to list with mode and flag.
+	- Unlock list
