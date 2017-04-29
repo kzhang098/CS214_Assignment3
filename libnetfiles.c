@@ -194,7 +194,11 @@ int openSocket(char * hostname) {
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
 
 	if(sockfd < 0) {
-		printf("Bad socket\n");
+		char * error = malloc(100);
+		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+		perror(error);
+		printf("Error: %s\n", strerror(errno));
+		exit(1);
 		return -1;
 	} 
 	server = gethostbyname(hostname);
@@ -203,7 +207,11 @@ int openSocket(char * hostname) {
 	//a struct is returned with server info. 
 	
 	if(server == NULL) {
-		printf("Bad server\n");
+		char * error = malloc(100);
+		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+		perror(error);
+		printf("Error: %s\n", strerror(errno));
+		exit(1);
 		return -1;
 	}
 
