@@ -189,24 +189,32 @@ int runCommands(clientInfo * client) {
 				*/
 				//Check if path is a directory. If so, then write 3 which represents EISDIR error
 				
-				if(isDir(tokenizedBuffer[2]) == 1) {
-					sprintf(error, "%d", 3);
-					write(*socket, error, 255); 
-				}
+/*				if(isDir(tokenizedBuffer[2]) == 1) {
+					printf("Error: %s\n", strerror(errno)); 
+					char * response = (char*)malloc(64);
+					char* error = malloc(64);
+					sprintf(error, "%d", errno);
+                    strncat(response, "^", 1);
+                    strncat(response, error, strlen(error));
+                    write(*socket, response, strlen(response));
+					return -1;
+				}*/
 			
 				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
 					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					
-					/*
-
-					if(fd < 0) {
-						printf("Error: %s\n", strerror(errno)); 
-						return -1; 
-					}
 					
-					*/ 
-
+					if(fd == 1) {
+						printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(64);
+						char* error = malloc(64);
+						sprintf(error, "%d", errno);
+                        strncat(response, "^", 1);
+                        strncat(response, error, strlen(error));
+                        write(*socket, response, strlen(response));
+						return -1;
+					}
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
 					n = write(*socket, strfd, 255); 

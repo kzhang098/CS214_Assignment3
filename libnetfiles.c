@@ -104,6 +104,7 @@ char * callServer(int sockfd, char * buffer) {
 		errno = ECONNRESET;
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		exit(1);
 	}
 	if (buffer[0] == '^') {
 		char * error = malloc(100);
@@ -111,6 +112,7 @@ char * callServer(int sockfd, char * buffer) {
 		errno = atoi(error);
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		exit(1);
 	}
 	printf("Returned %s\n", buffer); 
 	return buffer;
@@ -216,6 +218,7 @@ int openSocket(char * hostname) {
 		errno = ECONNRESET;
 		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 		perror(error);
+		exit(1);
 	} 
 	printf("Success\n");	
 	return 0;
