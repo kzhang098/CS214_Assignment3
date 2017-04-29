@@ -26,22 +26,33 @@ int isDir(char * path) {
 // NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
 
 void handleError(int function, int response) {
+	char * error = malloc(100);
 	if(function == 0) { //Open 
 		switch(response) {
 			case 1: //EACCES
 				errno = EACCES;
+				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+				perror(error);
 				exit(1); 
 			case 2: //EINTR Interrupted function call; an asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
-				printf("EINTR error. Please try again"); 
+				errno = EINTR;
+				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+				perror(error);
 				exit(1); 
 			case 3: //EISDIR
-				printf("EISDIR error. Specified path is a directory"); 
+				errno = EISDIR;
+				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+				perror(error);
 				exit(1); 
 			case 4: //ENOENT
-				printf("ENOENT error. Specified file does not exist"); 
+				errno = ENOENT;
+				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+				perror(error);
 				exit(1);
 			case 5: //EROFS An attempt was made to modify something on a read-only file system.
-				printf("EROFS error. You attempted to modify a read-only file system"); 
+				errno = EROFS;
+				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+				perror(error);
 				exit(1);
 			default:
 				break; 
@@ -49,23 +60,29 @@ void handleError(int function, int response) {
 	} else if (function == 1 || function == 2) { //Read and write. They have the same errors. 
 		switch(response) {
 			case 1: //EBADF
-			
+			errno = EBADF;
+			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+			perror(error);
 			case 2: // ETIMEOUT
-			
+			errno = ETIMEDOUT;
+			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+			perror(error);
 			case 3: //ECONNRESET
 			errno = ECONNRESET;
-			char * error = malloc(100);
 			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
 			perror(error);
 			default:
 				break; 
 		}
 	} else if (function == 3) { //Close 
-		switch(response) 
+		switch(response) {
 			case 1: //EBADF
-			
+			errno = EBADF;
+			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
+			perror(error);
 			default: 
 				break; 
+		}
 	}
 
 }
@@ -167,6 +184,7 @@ int openSocket(char * hostname) {
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);  
 
 	if(sockfd < 0) {
+		printf("Bad socket\n");
 		return -1;
 	} 
 	server = gethostbyname(hostname);
@@ -175,6 +193,7 @@ int openSocket(char * hostname) {
 	//a struct is returned with server info. 
 	
 	if(server == NULL) {
+		printf("Bad server\n");
 		return -1;
 	}
 
@@ -198,6 +217,7 @@ int netserverinit(char * hostname) {
 	IPaddress = malloc(strlen(hostname));
 	IPaddress = hostname;
 	if (openSocket(IPaddress) == -1) {
+		printf("Error initializing");
 		return -1;
 	}
 	int n = write(sockfd, "Initializing", 12);
@@ -225,7 +245,7 @@ int netopen(const char *path, int oflags) {
 	printf("%s\n", finalMessage);
 	int fd = atoi(callServer(sockfd, finalMessage));
 	
-	handleError(1,fd); // Will do nothing if nothing is wrong
+//	handleError(1,fd); // Will do nothing if nothing is wrong
 	
 	printf("closing?\n");
 	close(sockfd);
