@@ -170,7 +170,7 @@ int runCommands(clientInfo * client) {
 	int n; 
 	
 	memset(buffer,0, 256); 
-    	n = read(*socket, buffer, 255); 
+    	n = recv(*socket, buffer, 255,0); 
 	printf("This is the message: %s\n", buffer);
 			
 	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -184,19 +184,20 @@ int runCommands(clientInfo * client) {
 				file = fopen(tokenizedBuffer[0],"r");
 				if(file == NULL) {
 					sprintf(error, "%d", 4);
-					write(*socket, error, 255); 
+					send(*socket, error, 255,0); 
 				} 
 				*/
 				//Check if path is a directory. If so, then write 3 which represents EISDIR error
 				
-/*				if(isDir(tokenizedBuffer[2]) == 1) {
+				/*				
+				if(isDir(tokenizedBuffer[2]) == 1) {
 					printf("Error: %s\n", strerror(errno)); 
 					char * response = (char*)malloc(64);
 					char* error = malloc(64);
 					sprintf(error, "%d", errno);
-                    strncat(response, "^", 1);
-                    strncat(response, error, strlen(error));
-                    write(*socket, response, strlen(response));
+                    			strncat(response, "^", 1);
+                    			strncat(response, error, strlen(error));
+                    			send(*socket, response, strlen(response),0);
 					return -1;
 				}*/
 			
@@ -210,9 +211,9 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(64);
 						char* error = malloc(64);
 						sprintf(error, "%d", errno);
-                        strncat(response, "^", 1);
-                        strncat(response, error, strlen(error));
-                        write(*socket, response, strlen(response));
+                        			strncat(response, "^", 1);
+                        			strncat(response, error, strlen(error));
+                        			send(*socket, response, strlen(response),0);
 						return -1;
 					}
 					char * strfd = malloc(64);
@@ -223,7 +224,7 @@ int runCommands(clientInfo * client) {
 				
 					//The file does not have read permission. Throw error. 
 					sprintf(error,"%d", 1); 
-					write(*socket, error, 255); 
+					send(*socket, error, 255,0); 
 				} 
 				*/
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
@@ -232,7 +233,7 @@ int runCommands(clientInfo * client) {
 				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
 				
 				//pthread_rwlock_rdlock(&rwlock);
-				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+				int bytesread = recv(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
 				
 				//THIS IS EBADF ERROR
 
@@ -243,7 +244,7 @@ int runCommands(clientInfo * client) {
 						sprintf(error, "%d", errno);
                         strncat(response, "^", 1);
                         strncat(response, error, strlen(error));
-                        write(*socket, response, strlen(response));
+                        send(*socket, response, strlen(response),0);
 						return -1;
 				}
 
@@ -253,12 +254,12 @@ int runCommands(clientInfo * client) {
 				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
 				sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
 				printf("PRINTING %s\n", returnMessage);  
-				n = write(*socket, returnMessage, strlen(returnMessage)); 
+				n = send(*socket, returnMessage, strlen(returnMessage),0); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
 				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
 				//pthread_rwlock_rdlock(&rwlock);
-				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				int written = send(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
 				
 				if(written < 0) {
 					printf("Error: %s\n", strerror(errno)); 
@@ -267,7 +268,7 @@ int runCommands(clientInfo * client) {
 						sprintf(error, "%d", errno);
                         strncat(response, "^", 1);
                         strncat(response, error, strlen(error));
-                        write(*socket, response, strlen(response));
+                        send(*socket, response, strlen(response),0);
 						return -1;
 				} 
 
@@ -275,7 +276,7 @@ int runCommands(clientInfo * client) {
 				//printf("%s\n", tokenizedBuffer[4]); 
 				char * strwritten = malloc(64);
 				sprintf(strwritten, "%d", written);
-				n = write(*socket, strwritten, strlen(strwritten)); 
+				n = recv(*socket, strwritten, strlen(strwritten),0); 
 			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 				printf("Closing\n");
 				int success = close(-1 * atoi(tokenizedBuffer[1]));
@@ -284,14 +285,14 @@ int runCommands(clientInfo * client) {
 				
 				
 	
-				if(success < 1) {
+				if(success < 0) {
 					printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(64);
 						char* error = malloc(64);
 						sprintf(error, "%d", errno);
-                        strncat(response, "^", 1);
-                        strncat(response, error, strlen(error));
-                        write(*socket, response, strlen(response));
+                        			strncat(response, "^", 1);
+                        			strncat(response, error, strlen(error));
+                        			send(*socket, response, strlen(response),0);
 						return -1;
 				}
 		
@@ -299,7 +300,7 @@ int runCommands(clientInfo * client) {
 
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
-				n = write(*socket, strsuccess, 255); 
+				n = sned(*socket, strsuccess, 255,0); 
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 		}
@@ -370,7 +371,7 @@ int main(int argc, char ** argv) {
 			/*
 		
 			memset(buffer,0, 256); 
-			n = read(newsockfd, buffer, 255); 
+			n = recv(newsockfd, buffer, 255,0); 
 			
 			printf("This is the message: %s\n", buffer);
 			if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -380,30 +381,30 @@ int main(int argc, char ** argv) {
 					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
-					n = write(newsockfd, strfd, 255); 
+					n = send(newsockfd, strfd, 255,0); 
 				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 					printf("Reading\n");
 					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
 					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
-					int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+					int bytesread = recv(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
 					char * strread = malloc(64);
 					sprintf(strread, "%d", bytesread);
 					char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
 					sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
-					n = write(newsockfd, returnMessage, strlen(returnMessage)); 
+					n = send(newsockfd, returnMessage, strlen(returnMessage)); 
 				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 					printf("Writing\n");
 					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
-					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+					int written = send(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
 					char * strwritten = malloc(64);
 					sprintf(strwritten, "%d", written);
-					n = write(newsockfd, strwritten, strlen(strwritten)); 
+					n = send(newsockfd, strwritten, strlen(strwritten),0); 
 				} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 					printf("Closing\n");
 					int success = close(-1 * atoi(tokenizedBuffer[1]));
 					char * strsuccess = malloc(5);
 					sprintf(strsuccess, "%d", success);
-					n = write(newsockfd, strsuccess, 255); 
+					n = send(newsockfd, strsuccess, 255,0); 
 				}
 				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			}
