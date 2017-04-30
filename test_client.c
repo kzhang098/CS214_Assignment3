@@ -7,7 +7,7 @@ int main(int argc, char ** argv) {
 	//Get standard input. The default number of bytes to read is 256.
 	
 	int i;
-	netserverinit(argv[1]);
+	netserverinit(argv[1], 0);
 	for (i = 0; i < 50; i++) {
 		char * test = malloc(50);
 		int fd = netopen("./Hints.txt", 2);

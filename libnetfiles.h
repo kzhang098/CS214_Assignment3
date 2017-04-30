@@ -20,7 +20,7 @@ int openSocket(char * hostname);
 char * callServer(int sockfd, char * buffer);
 void error(char * error_msg);
 
-int netserverinit(char * hostname);
+int netserverinit(char * hostname, int mode);
 int netopen(const char *path, int oflags);
 ssize_t netread(int fildes, void *buf, size_t nbyte);
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte);

@@ -89,7 +89,7 @@ int isDir(char * path) {
 
 
 char * callServer(int sockfd, char * buffer) {
-	int n = send(sockfd, buffer, strlen(buffer), 0);
+	int n = write(sockfd, buffer, strlen(buffer));
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
@@ -97,7 +97,7 @@ char * callServer(int sockfd, char * buffer) {
 
 	bzero(buffer,256);
 	printf("Reading...\n"); 
-	n = recv(sockfd,buffer,255, 0); 
+	n = read(sockfd,buffer,255); 
 	printf("Stuck...\n");
 	if(n < 0) {
 		char * error = malloc(100);
@@ -234,14 +234,14 @@ int openSocket(char * hostname) {
 	return 0;
 }
 
-int netserverinit(char * hostname) {
+int netserverinit(char * hostname, int mode) {
 	IPaddress = malloc(strlen(hostname));
 	IPaddress = hostname;
 	if (openSocket(IPaddress) == -1) {
 		printf("Error initializing");
 		return -1;
 	}
-	int n = send(sockfd, "Initializing", 12, 0);
+	int n = write(sockfd, "Initializing", 12);
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	

@@ -1,42 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <errno.h> 
-#include "libnetfiles.c"
-
-/*
-*GLOBAL VARIABLES
-*/
-
-char * fileNames[10]; 
-pthread_t clients[10];
-
-/*
-* This struct is supposed to store client information such as it's unique id and it's socket id (the socket we're using to communicate with it) 
-*
-*
-*/
-
-typedef struct packetData {
-	int functionType; //0: Netopen ; 1: Netclose; 2: Netread; 3: Netwrite 	
-	int flag; //The open, read, write commands.
-	int size; //The size of the bytes to be read, written. 
-	int fileDescriptor; //The server-side file descriptor for the file (This is returned from the netopen() 
-	char * buffer; //The buffer containing information that's to be read from or written to the file. 
-	char * filePath; //The file that the client will be "touching"
-} packetData; 
-
-typedef struct clientInfo { 
-	int * socketId;
-	int clientId; 
-	int portNum; 
-	packetData * commands;
-} clientInfo;
+#include "test_server.h"
 
 /*
 * THE BELOW FUNCTIONS SHOULD BE MOVED TO LIBNETFILES LATER
@@ -160,9 +122,7 @@ char ** tokenizeMessage(char* message) {
 }
 
 
-int runCommands(clientInfo * client) {
-	
-	int * socket = client->socketId; // This is the socket we are using to communicate with the client
+int runCommands(int *socket) { // This is the socket we are using to communicate with the client
 	char buffer[256]; 
 	char * error = (char*)malloc(64);
 	pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER; 	
@@ -170,7 +130,7 @@ int runCommands(clientInfo * client) {
 	int n; 
 	
 	memset(buffer,0, 256); 
-    	n = recv(*socket, buffer, 255,0); 
+    	n = read(*socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
 	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -184,7 +144,7 @@ int runCommands(clientInfo * client) {
 				file = fopen(tokenizedBuffer[0],"r");
 				if(file == NULL) {
 					sprintf(error, "%d", 4);
-					send(*socket, error, 255,0); 
+					write(*socket, error, 255,0); 
 				} 
 				*/
 				//Check if path is a directory. If so, then write 3 which represents EISDIR error
@@ -197,91 +157,91 @@ int runCommands(clientInfo * client) {
 					sprintf(error, "%d", errno);
                     			strncat(response, "^", 1);
                     			strncat(response, error, strlen(error));
-                    			send(*socket, response, strlen(response),0);
+                    			write(*socket, response, strlen(response),0);
 					return -1;
 				}*/
 			
 				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
-					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
+					int fd = -2 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					
 					
 					if(fd == 1) {
 						printf("Error: %s\n", strerror(errno)); 
-						char * response = (char*)malloc(64);
-						char* error = malloc(64);
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
 						sprintf(error, "%d", errno);
                         			strncat(response, "^", 1);
                         			strncat(response, error, strlen(error));
-                        			send(*socket, response, strlen(response),0);
+                        			write(*socket, response, strlen(response));
 						return -1;
 					}
-					char * strfd = malloc(64);
+					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
-					printf("Sending\n");
-					n = send(*socket, strfd, 255, 0); 
+					printf("writeing\n");
+					n = write(*socket, strfd, 255); 
 					printf("Sent\n");
 				/*
 				} else {
 				
 					//The file does not have read permission. Throw error. 
 					sprintf(error,"%d", 1); 
-					send(*socket, error, 255,0); 
+					write(*socket, error, 255,0); 
 				} 
 				*/
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 				printf("Reading\n");
-				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
+				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_SET);
 				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
 				
 				//pthread_rwlock_rdlock(&rwlock);
-				int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]));
+				int bytesread = read(atoi(tokenizedBuffer[1]) / -2, readBuffer, atoi(tokenizedBuffer[5]));
 				
 				//THIS IS EBADF ERROR
 
 				if(bytesread < 0) {
 					printf("Error: %s\n", strerror(errno)); 
-						char * response = (char*)malloc(64);
-						char* error = malloc(64);
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
 						sprintf(error, "%d", errno);
                         strncat(response, "^", 1);
                         strncat(response, error, strlen(error));
-                        send(*socket, response, strlen(response),0);
+                        write(*socket, response, strlen(response));
 						return -1;
 				}
 
 				//pthread_rwlock_unlock(&rwlock); 
-				char * strread = malloc(64);
+				char * strread = malloc(10);
 				sprintf(strread, "%d", bytesread);
 				char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
 				sprintf(returnMessage, "%s^%s", readBuffer, strread);
 				printf("PRINTING %s\n", returnMessage);  
-				n = send(*socket, returnMessage, strlen(returnMessage),0); 
+				n = write(*socket, returnMessage, strlen(returnMessage)); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
-				lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
+				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_END);
 				//pthread_rwlock_rdlock(&rwlock);
-				int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				int written = write(atoi(tokenizedBuffer[1]) / -2, tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
 				printf("Done writing\n");
 				if(written < 0) {
 					printf("Error: %s\n", strerror(errno)); 
-						char * response = (char*)malloc(64);
-						char* error = malloc(64);
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
 						sprintf(error, "%d", errno);
                         strncat(response, "^", 1);
                         strncat(response, error, strlen(error));
-                        send(*socket, response, strlen(response),0);
+                        write(*socket, response, strlen(response));
 						return -1;
 				} 
 
 				//pthread_rwlock_unlock(&rwlock); 
 				//printf("%s\n", tokenizedBuffer[4]); 
-				char * strwritten = malloc(64);
+				char * strwritten = malloc(10);
 				sprintf(strwritten, "%d", written);
-				n = send(*socket, strwritten, strlen(strwritten),0); 
+				n = write(*socket, strwritten, strlen(strwritten)); 
 			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 				printf("Closing\n");
-				int success = close(-1 * atoi(tokenizedBuffer[1]));
+				int success = close(atoi(tokenizedBuffer[1]) / -2);
 				
 				//ERROR HANDLING
 				
@@ -289,12 +249,12 @@ int runCommands(clientInfo * client) {
 	
 				if(success < 0) {
 					printf("Error: %s\n", strerror(errno)); 
-						char * response = (char*)malloc(64);
-						char* error = malloc(64);
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
 						sprintf(error, "%d", errno);
                         			strncat(response, "^", 1);
                         			strncat(response, error, strlen(error));
-                        			send(*socket, response, strlen(response),0);
+                        			write(*socket, response, strlen(response));
 						return -1;
 				}
 		
@@ -302,17 +262,40 @@ int runCommands(clientInfo * client) {
 
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
-				n = send(*socket, strsuccess, 255,0); 
+				n = write(*socket, strsuccess, 255); 
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 		}
 	return 0; 
 }
 
+void appendClient(clientInfo* client) {
+	printf("Testing\n");
+	clientInfo* ptr = clients;
+	clientInfo* prev = NULL;
+	if (clients == NULL) {
+		printf("Put at front\n");
+		clients = client;
+		return;
+	}
+	printf("Not empty\n");
+	while (ptr != NULL) {
+		if (strncmp(ptr->IPAddress, client->IPAddress, strlen(client->IPAddress)) == 0) {
+			printf("Already exists\n");
+			free(client);
+			return;
+		}
+		printf("Looping\n");
+		prev = ptr;
+		ptr = ptr->next;
+	}
+	prev->next = client;
+}
+
 int main(int argc, char ** argv) {
 
 	int sockfd; //Stands for socket file descriptor
-	int newsockfd;
+	int * newsockfd;
 	int portNum = 9001; 
 	int n; 
 	int clilen;
@@ -348,7 +331,8 @@ int main(int argc, char ** argv) {
 			listen(sockfd, 1);
 			flag = 1;
 			clilen = sizeof(cli_addr);
-			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+			newsockfd = malloc(sizeof(int));
+			*newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 			
 			printf("%d\n", newsockfd);
 			
@@ -356,11 +340,11 @@ int main(int argc, char ** argv) {
 				printf("Could not accept connection from client"); 
 			} else {
 				clientInfo * cInfo = (clientInfo*)malloc(sizeof(clientInfo));
-				cInfo->socketId = (int*) malloc(sizeof(int));
-				cInfo->socketId = &newsockfd; //Stores the socket into the struct. 
-				cInfo->clientId = i; 
-				cInfo->commands = (packetData*)malloc(sizeof(packetData)); 
-				flag = pthread_create(&clients[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
+				cInfo->IPAddress = (char * )malloc(strlen(inet_ntoa(cli_addr.sin_addr)) + 2);
+				sprintf(cInfo->IPAddress, "%s\0",inet_ntoa(cli_addr.sin_addr));
+				printf("%s\n", cInfo->IPAddress);
+				appendClient(cInfo);
+				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, newsockfd); //Starts a new thread with the created struct  
 				printf("%d\n", newsockfd); 
 			}
 			
@@ -373,7 +357,7 @@ int main(int argc, char ** argv) {
 			/*
 		
 			memset(buffer,0, 256); 
-			n = recv(newsockfd, buffer, 255,0); 
+			n = read(newsockfd, buffer, 255,0); 
 			
 			printf("This is the message: %s\n", buffer);
 			if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -383,30 +367,30 @@ int main(int argc, char ** argv) {
 					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					char * strfd = malloc(64);
 					sprintf(strfd, "%d", fd);
-					n = send(newsockfd, strfd, 255,0); 
+					n = write(newsockfd, strfd, 255,0); 
 				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 					printf("Reading\n");
 					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
 					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
-					int bytesread = recv(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
+					int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
 					char * strread = malloc(64);
 					sprintf(strread, "%d", bytesread);
 					char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
 					sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
-					n = send(newsockfd, returnMessage, strlen(returnMessage)); 
+					n = write(newsockfd, returnMessage, strlen(returnMessage)); 
 				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 					printf("Writing\n");
 					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
-					int written = send(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
+					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
 					char * strwritten = malloc(64);
 					sprintf(strwritten, "%d", written);
-					n = send(newsockfd, strwritten, strlen(strwritten),0); 
+					n = write(newsockfd, strwritten, strlen(strwritten),0); 
 				} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
 					printf("Closing\n");
 					int success = close(-1 * atoi(tokenizedBuffer[1]));
 					char * strsuccess = malloc(5);
 					sprintf(strsuccess, "%d", success);
-					n = send(newsockfd, strsuccess, 255,0); 
+					n = write(newsockfd, strsuccess, 255,0); 
 				}
 				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			}
