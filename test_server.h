@@ -27,6 +27,7 @@ typedef struct packetData {
 
 typedef struct clientInfo { 
 	char * IPAddress;
+	int socketId;
 	int mode;
 	struct clientInfo* next;
 } clientInfo;
