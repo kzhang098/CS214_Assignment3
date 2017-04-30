@@ -10,8 +10,92 @@
 // " , " : Function 
 // " ^ " : 
 
-char ** tokenizeMessage(char* message) {
+
+
+
+/*
+Just a note: 
+
+MODES
+
+* 0 : Unrestricted
+* 1 : Exclusive
+* 2 : Transaction
+
+FLAGS
+
+* 0 : Read Only
+* 1 : Write Only
+* 2 : Read/Write
+
+*/
+
+int checkLogic(fileInfo * entry, char * filePath, int mode, int flag) {
+		fileInfo * ptr = files;
+
+		pthread_mutex_lock(&userLock); 
+		
+		int found = 0;
+		
+		while(ptr != NULL) {
+			//Depending on the mode of the current request, I have to follow different logic
+			switch(mode) {
+				case 0: //If mode from client request is Unrestricted.
+					if(strcmp(files->pathname,filePath) == 0) { //If the names match. 
+						found = 1; 
+						if(files->mode == 2) { //Is the file in transaction mode?
+							//Can't do anything
+							found = 0; // I set this back to zero since if 1, it would add to the end.
+						} else {
+							if(files->mode == 1 && (files->o_flags == 1 || files->o_flags == 2)) { // Check if in exclusive and in write OR read/write mode.
+								//Client can only read then. Since with exclusive only ONE client can have read permissions at a time
+							}
+						}
+					} 
+					
+					break;
+				case 1: //Exclusive
+					if(strcmp(files->pathname,filePath) == 0) { //Open?
+						found = 1;
+						if(files->mode == 2) { //Transaction Mode?
+							//Can't do anything.
+							found == 0;
+						} else { //
+							if(files->o_flags == 1 || files->o_flags == 2) { //Check if in write mode. If yes, then you cannot write. 
+							
+							}
+						}
+					}
+				
+					break;
+				case 3:
+			
+				break;
+			
+			}
+			
+			ptr = ptr->next; 	
+		}
+		
+		if(found) {
+				//Then add to ptr since ptr is already at the end.
+		}
+		
+		pthread_mutex_unlock(&userLock); 
+		
+		return 0; // Just temporary
+}		
+
+int parseMode(char * initMessage) {
+	int mode; 
+	char * char_mode = (char*)malloc(1); 
+	memcpy(char_mode, &initMessage[13], 1);
+	mode = atoi(char_mode);
 	
+	return mode; 
+}
+
+char ** tokenizeMessage(char* message) {
 	char ** result = (char**)malloc(6*sizeof(char*)); 
 		
 	//Index values and array to store the indices. 
@@ -44,7 +128,6 @@ char ** tokenizeMessage(char* message) {
 	
 	int i;
 	int value;  
-
 
 	for(i = 0; i < 6; i++) {
 		if(indexArr[i+1] - indexArr[i] != 1) {
@@ -81,8 +164,6 @@ char ** tokenizeMessage(char* message) {
 			}
 		} else {
 			
-			//Otherwise I need to signal that the argument is empty.
-			
 			 switch(i) {
                                 case 0:
                                         strncpy(functionName, "empty", 5);
@@ -113,18 +194,6 @@ char ** tokenizeMessage(char* message) {
 
 	printf("Yes?\n"); 	
 	
-	/*
-	
-	memcpy(result[0],functionName, sizeof(functionName)); 
-	memcpy(result[1],fileDes, sizeof(fileDes));
-	memcpy(result[2],path, sizeof(path)); 
-	memcpy(result[3],flags, sizeof(flags));
-	memcpy(result[4],buffer, sizeof(buffer));
-	memcpy(result[5],length, sizeof(length)); 
-	printf("Yes?\n");
-	
-	*/
-	
 	result[0] = functionName;
 	result[1] = fileDes;
 	result[2] = path;
@@ -134,14 +203,6 @@ char ** tokenizeMessage(char* message) {
 
 	printf("About to free!!!?\n");
 	
-	/*
-	free(functionName);
-	free(fileDes); 
-	free(path);
-	free(flags);
-	free(buffer);
-	free(length);
-	*/
 	return result;
 }
 
@@ -159,7 +220,7 @@ int runCommands(clientInfo * client) {
     n = read(socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
-	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
+	if (strncmp(buffer, "Initializing", 12) != 0) {
 		char ** tokenizedBuffer = tokenizeMessage(buffer);
 			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
 				
@@ -189,8 +250,8 @@ int runCommands(clientInfo * client) {
 			
 				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
+								
 					int fd = -2 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
-					
 					
 					if(fd == 1) {
 						printf("Error: %s\n", strerror(errno)); 
@@ -206,6 +267,27 @@ int runCommands(clientInfo * client) {
 						
 						return -1;
 					}
+
+					//THIS IS THE PART I'M ADDING FOR EXTENSION A
+					
+					// -----------------------------------------------------------------------
+					
+					//I should probably check the logic here.
+					
+					//Creating struct for EXTENSION A
+					
+					/*
+					
+					fileInfo * myfile = (fileInfo*)malloc(sizeof(fileInfo));
+					memcpy(myfile->pathname, tokenizedBuffer[0], strlen(tokenizedBuffer[0]));
+					myfile->mode = client->mode;
+					myfile->o_flags = atoi(tokenizedBuffer[3]);
+					myfile->next = NULL;
+					
+					*/
+					
+					// -----------------------------------------------------------------------
+					
 					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
 					printf("writing\n");
@@ -289,8 +371,6 @@ int runCommands(clientInfo * client) {
 				
 				//ERROR HANDLING
 				
-				
-	
 				if(success < 0) {
 					printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(15);
@@ -305,8 +385,6 @@ int runCommands(clientInfo * client) {
 						return -1;
 				}
 		
-				
-
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
 				n = write(socket, strsuccess, 255); 
@@ -315,6 +393,12 @@ int runCommands(clientInfo * client) {
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			free(tokenizedBuffer); 
+		} else { //set mode for this client. 
+			int mode;
+			mode = parseMode(buffer);
+			client->mode = mode;
+			printf("THIS IS THE MODE!!!!!! %d\n", client->mode);
+			
 		}
 	return 0; 
 }
@@ -384,7 +468,7 @@ int main(int argc, char ** argv) {
 	int flag = 1;
 	
 	listen(sockfd, 1);
-	
+	 
 	while (1) {	
 			
 			flag = 1;
@@ -402,12 +486,7 @@ int main(int argc, char ** argv) {
 				sprintf(cInfo->IPAddress, "%s\0",inet_ntoa(cli_addr.sin_addr));
 				cInfo->next = NULL; 
 				printf("%s\n", cInfo->IPAddress);
-				
-				//pthread_mutex_lock(&userLock);
-				//printf("Locked\n");
 				appendClient(cInfo);
-				//pthread_mutex_unlock(&userLock);
-				//printf("Unlocked\n");
 				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
 				pthread_join(clientThreads[i], NULL);
 				printf("%d\n", newsockfd); 

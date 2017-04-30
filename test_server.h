@@ -44,7 +44,7 @@ typedef struct fileInfo {
 *GLOBAL VARIABLES
 */
 
-char * fileNames[10]; 
+fileInfo * fileNames; 
 pthread_t clientThreads[5000];
 clientInfo* clients;
 fileInfo* files;

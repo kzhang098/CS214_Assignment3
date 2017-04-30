@@ -23,70 +23,6 @@ int isDir(char * path) {
 	return S_ISDIR(buf.st_mode);
 }
 
-// NEED TO IMPLEMENT ERROR DETECTION ON SERVER SIDE
-
-/*void handleError(int function, int response) {
-	char * error = malloc(100);
-	if(function == 0) { //Open 
-		switch(response) {
-			case 1: //EACCES
-				errno = EACCES;
-				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-				perror(error);
-				exit(1); 
-			case 2: //EINTR Interrupted function call; an asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
-				errno = EINTR;
-				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-				perror(error);
-				exit(1); 
-			case 3: //EISDIR
-				errno = EISDIR;
-				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-				perror(error);
-				exit(1); 
-			case 4: //ENOENT
-				errno = ENOENT;
-				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-				perror(error);
-				exit(1);
-			case 5: //EROFS An attempt was made to modify something on a read-only file system.
-				errno = EROFS;
-				sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-				perror(error);
-				exit(1);
-			default:
-				break; 
-		}
-	} else if (function == 1 || function == 2) { //Read and write. They have the same errors. 
-		switch(response) {
-			case 1: //EBADF
-			errno = EBADF;
-			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-			perror(error);
-			case 2: // ETIMEOUT
-			errno = ETIMEDOUT;
-			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-			perror(error);
-			case 3: //ECONNRESET
-			errno = ECONNRESET;
-			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-			perror(error);
-			default:
-				break; 
-		}
-	} else if (function == 3) { //Close 
-		switch(response) {
-			case 1: //EBADF
-			errno = EBADF;
-			sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-			perror(error);
-			default: 
-				break; 
-		}
-	}
-
-}*/
-
 
 char * callServer(int sockfd, char * buffer) {
 	int n = write(sockfd, buffer, strlen(buffer));
@@ -106,6 +42,7 @@ char * callServer(int sockfd, char * buffer) {
 		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	}
+	printf("First loop"); 
 	if (buffer[0] == '`') {
 		char * error = malloc(100);
 		strncpy(error, &buffer[1], strlen(buffer) - 1);
@@ -144,7 +81,7 @@ void createMessage(char * finalMessage, char * func, int fildes, const char * pa
 	if (buf != NULL) {
 		if (strcmp(func, "read") == 0) {
 			char * buffer = malloc(64);
-			sprintf(buffer, "%ld", buf);
+			sprintf(buffer, "%d", buf);
 			finalMessage = strncat(finalMessage, buffer, strlen(buffer));
 		} else {
 			char * buffer = malloc(strlen(buf) + 1);
@@ -233,13 +170,19 @@ int openSocket(char * hostname) {
 }
 
 int netserverinit(char * hostname, int mode) {
+	
 	IPaddress = malloc(strlen(hostname));
 	IPaddress = hostname;
 	if (openSocket(IPaddress) == -1) {
 		printf("Error initializing");
 		return -1;
 	}
-	int n = write(sockfd, "Initializing", 12);
+	
+	char * response = malloc(strlen("Initializing:") + 1);
+	strcat(response,"Initializing:");
+	strcat(response, mode);
+	
+	int n = write(sockfd, response, strlen(response));
 	if(n < 0) {
 		printf("Error writing to socket...");
 		exit(1);	
