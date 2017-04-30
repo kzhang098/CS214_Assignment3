@@ -276,15 +276,16 @@ int runCommands(clientInfo * client) {
 					
 					//Creating struct for EXTENSION A
 					
-					/*
+					
 					
 					fileInfo * myfile = (fileInfo*)malloc(sizeof(fileInfo));
-					memcpy(myfile->pathname, tokenizedBuffer[0], strlen(tokenizedBuffer[0]));
+					myfile->pathname = (char*)malloc(sizeof(tokenizedBuffer[0]));
+					strncpy(myfile->pathname, tokenizedBuffer[0], strlen(tokenizedBuffer[0]));
 					myfile->mode = client->mode;
 					myfile->o_flags = atoi(tokenizedBuffer[3]);
 					myfile->next = NULL;
 					
-					*/
+					
 					
 					// -----------------------------------------------------------------------
 					
