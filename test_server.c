@@ -173,14 +173,14 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        			strncat(response, "^", 1);
+                        			strncat(response, "`", 1);
                         			strncat(response, error, strlen(error));
                         			write(socket, response, strlen(response));
 						return -1;
 					}
 					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
-					printf("writeing\n");
+					printf("writing\n");
 					n = write(socket, strfd, 255); 
 					printf("Sent\n");
 				/*
@@ -206,7 +206,7 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        strncat(response, "^", 1);
+                        strncat(response, "`", 1);
                         strncat(response, error, strlen(error));
                         write(socket, response, strlen(response));
 						return -1;
@@ -230,7 +230,7 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        strncat(response, "^", 1);
+                        strncat(response, "`", 1);
                         strncat(response, error, strlen(error));
                         write(socket, response, strlen(response));
 						return -1;
@@ -254,7 +254,7 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        			strncat(response, "^", 1);
+                        			strncat(response, "`", 1);
                         			strncat(response, error, strlen(error));
                         			write(socket, response, strlen(response));
 						return -1;

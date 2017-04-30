@@ -106,12 +106,10 @@ char * callServer(int sockfd, char * buffer) {
 		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	}
-	if (buffer[0] == '^') {
+	if (buffer[0] == '`') {
 		char * error = malloc(100);
 		strncpy(error, &buffer[1], strlen(buffer) - 1);
 		errno = atoi(error);
-		sprintf(error, "Error on line %d of %s", __LINE__, __FILE__);
-		perror(error);
 		printf("Error: %s\n", strerror(errno));
 		exit(1);
 	}
