@@ -272,22 +272,32 @@ int runCommands(clientInfo * client) {
 }
 
 void appendClient(clientInfo* client) {
+
 	printf("Testing\n");
 	clientInfo* ptr = clients;
 	clientInfo* prev = NULL;
 	if (clients == NULL) {
 		printf("Put at front\n");
+		client->next = NULL;
 		clients = client;
 		return;
 	}
 	printf("Not empty\n");
 	while (ptr != NULL) {
+		if (strcmp(ptr->IPAddress, client->IPAddress) == 0) {
+			printf("Already exists\n");
+			ptr->socketId = client->socketId;
+			return;
+		}
+		printf("%s\n", ptr->IPAddress);
 		prev = ptr;
 		ptr = ptr->next;
 	}
 	printf("Appending something\n");
-	prev->next = client;
 	client->next = NULL;
+	prev->next = client;
+	
+
 }
 
 int main(int argc, char ** argv) {
@@ -341,7 +351,12 @@ int main(int argc, char ** argv) {
 				cInfo->IPAddress = (char * )malloc(strlen(inet_ntoa(cli_addr.sin_addr)) + 2);
 				sprintf(cInfo->IPAddress, "%s\0",inet_ntoa(cli_addr.sin_addr));
 				printf("%s\n", cInfo->IPAddress);
+				
+				pthread_mutex_lock(&userLock);
+				printf("Locked\n");
 				appendClient(cInfo);
+				pthread_mutex_unlock(&userLock);
+				printf("Unlocked\n");
 				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
 				printf("%d\n", newsockfd); 
 			}
