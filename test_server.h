@@ -45,7 +45,8 @@ typedef struct fileInfo {
 */
 
 char * fileNames[10]; 
-pthread_t clientThreads[10];
+pthread_t clientThreads[5000];
 clientInfo* clients;
 fileInfo* files;
+//pthread_mutex_t userLock;
 pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;

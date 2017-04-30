@@ -111,6 +111,20 @@ char ** tokenizeMessage(char* message) {
 		}
 	}
 
+	printf("Yes?\n"); 	
+	
+	/*
+	
+	memcpy(result[0],functionName, sizeof(functionName)); 
+	memcpy(result[1],fileDes, sizeof(fileDes));
+	memcpy(result[2],path, sizeof(path)); 
+	memcpy(result[3],flags, sizeof(flags));
+	memcpy(result[4],buffer, sizeof(buffer));
+	memcpy(result[5],length, sizeof(length)); 
+	printf("Yes?\n");
+	
+	*/
+	
 	result[0] = functionName;
 	result[1] = fileDes;
 	result[2] = path;
@@ -118,6 +132,16 @@ char ** tokenizeMessage(char* message) {
 	result[4] = buffer;
 	result[5] = length; 
 
+	printf("About to free!!!?\n");
+	
+	/*
+	free(functionName);
+	free(fileDes); 
+	free(path);
+	free(flags);
+	free(buffer);
+	free(length);
+	*/
 	return result;
 }
 
@@ -132,7 +156,7 @@ int runCommands(clientInfo * client) {
 	int n; 
 	
 	memset(buffer,0, 256); 
-    	n = read(socket, buffer, 255); 
+    n = read(socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
 	if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
@@ -173,9 +197,13 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        			strncat(response, "`", 1);
-                        			strncat(response, error, strlen(error));
-                        			write(socket, response, strlen(response));
+                        strncat(response, "`", 1);
+                        strncat(response, error, strlen(error));
+                        write(socket, response, strlen(response));
+						
+						free(response);
+						free(error);
+						
 						return -1;
 					}
 					char * strfd = malloc(10);
@@ -183,6 +211,9 @@ int runCommands(clientInfo * client) {
 					printf("writing\n");
 					n = write(socket, strfd, 255); 
 					printf("Sent\n");
+					
+					free(strfd); 
+					 
 				/*
 				} else {
 				
@@ -209,6 +240,9 @@ int runCommands(clientInfo * client) {
                         strncat(response, "`", 1);
                         strncat(response, error, strlen(error));
                         write(socket, response, strlen(response));
+						
+						free(response);
+						free(error); 
 						return -1;
 				}
 
@@ -219,6 +253,10 @@ int runCommands(clientInfo * client) {
 				sprintf(returnMessage, "%s^%s", readBuffer, strread);
 				printf("PRINTING %s\n", returnMessage);  
 				n = write(socket, returnMessage, strlen(returnMessage)); 
+				
+				free(readBuffer); 
+				free(strread); 
+				free(returnMessage); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
 				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_END);
@@ -233,6 +271,10 @@ int runCommands(clientInfo * client) {
                         strncat(response, "`", 1);
                         strncat(response, error, strlen(error));
                         write(socket, response, strlen(response));
+						
+						free(response);
+						free(error); 
+						
 						return -1;
 				} 
 
@@ -254,9 +296,12 @@ int runCommands(clientInfo * client) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        			strncat(response, "`", 1);
-                        			strncat(response, error, strlen(error));
-                        			write(socket, response, strlen(response));
+                        strncat(response, "`", 1);
+                        strncat(response, error, strlen(error));
+                        write(socket, response, strlen(response));
+						
+						free(response);
+						free(error); 
 						return -1;
 				}
 		
@@ -265,8 +310,11 @@ int runCommands(clientInfo * client) {
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
 				n = write(socket, strsuccess, 255); 
+				
+				free(strsuccess); 
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
+			free(tokenizedBuffer); 
 		}
 	return 0; 
 }
@@ -310,7 +358,7 @@ int main(int argc, char ** argv) {
 	
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr; 
-
+	//clients = (clientInfo *)malloc(sizeof(clientInfo)); 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 
 	if(sockfd < 0) {
@@ -335,8 +383,10 @@ int main(int argc, char ** argv) {
 	int clientNum = 0;
 	int flag = 1;
 	
+	listen(sockfd, 1);
+	
 	while (1) {	
-			listen(sockfd, 1);
+			
 			flag = 1;
 			clilen = sizeof(cli_addr);
 			newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
@@ -350,65 +400,24 @@ int main(int argc, char ** argv) {
 				cInfo->socketId = newsockfd; //Stores the socket into the struct. 
 				cInfo->IPAddress = (char * )malloc(strlen(inet_ntoa(cli_addr.sin_addr)) + 2);
 				sprintf(cInfo->IPAddress, "%s\0",inet_ntoa(cli_addr.sin_addr));
+				cInfo->next = NULL; 
 				printf("%s\n", cInfo->IPAddress);
 				
-				pthread_mutex_lock(&userLock);
-				printf("Locked\n");
+				//pthread_mutex_lock(&userLock);
+				//printf("Locked\n");
 				appendClient(cInfo);
-				pthread_mutex_unlock(&userLock);
-				printf("Unlocked\n");
+				//pthread_mutex_unlock(&userLock);
+				//printf("Unlocked\n");
 				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
+				pthread_join(clientThreads[i], NULL);
 				printf("%d\n", newsockfd); 
 			}
 			
-			if(flag == 1) {
-				printf("Hi...\n"); 
-			} else if (flag == 0) {
-				i++;
-			}
-		
-			/*
-		
-			memset(buffer,0, 256); 
-			n = read(newsockfd, buffer, 255,0); 
-			
-			printf("This is the message: %s\n", buffer);
-			if (strncmp(buffer, "Initializing", strlen(buffer)) != 0) {
-				char ** tokenizedBuffer = tokenizeMessage(buffer);
-				if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
-					printf("Opening\n");
-					int fd = -1 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
-					char * strfd = malloc(64);
-					sprintf(strfd, "%d", fd);
-					n = write(newsockfd, strfd, 255,0); 
-				} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
-					printf("Reading\n");
-					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_SET);
-					char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
-					int bytesread = read(-1 * atoi(tokenizedBuffer[1]), readBuffer, atoi(tokenizedBuffer[5]),0);
-					char * strread = malloc(64);
-					sprintf(strread, "%d", bytesread);
-					char * returnMessage = malloc(strlen(readBuffer) + strlen(tokenizedBuffer[4]));
-					sprintf(returnMessage, "%s^%s^%s", readBuffer, tokenizedBuffer[4], strread);
-					n = write(newsockfd, returnMessage, strlen(returnMessage)); 
-				} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
-					printf("Writing\n");
-					lseek(-1 * atoi(tokenizedBuffer[1]), 0, SEEK_END);
-					int written = write(-1 * atoi(tokenizedBuffer[1]), tokenizedBuffer[4], atoi(tokenizedBuffer[5]),0);
-					char * strwritten = malloc(64);
-					sprintf(strwritten, "%d", written);
-					n = write(newsockfd, strwritten, strlen(strwritten),0); 
-				} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
-					printf("Closing\n");
-					int success = close(-1 * atoi(tokenizedBuffer[1]));
-					char * strsuccess = malloc(5);
-					sprintf(strsuccess, "%d", success);
-					n = write(newsockfd, strsuccess, 255,0); 
-				}
-				printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
-			}
-			*/
-	
+			if(flag == 0) {
+				i++; 
+			} else  {
+				printf("Hi.../");
+			} 
 	}
 	return 0; 
 }
