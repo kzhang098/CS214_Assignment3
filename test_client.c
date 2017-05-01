@@ -15,6 +15,7 @@ int main(int argc, char ** argv) {
 		test[12] = '\0';
 		printf("%s\n", test);
 		netwrite(fd, "This is a test\n", 15);
+		netclose(fd);
 		fd = netopen("./Hints.txt", 2);
 		netread(fd, test, 12);
 		test[12] = '\0';

@@ -1,19 +1,6 @@
 #include "test_server.h"
 
 /*
-* THE BELOW FUNCTIONS SHOULD BE MOVED TO LIBNETFILES LATER
-*/
-
-//Packet Structure: Function,File Descriptor^File Path;o_flags*buffer:nbyte? 
-
-//Tip for delimeters: 
-// " , " : Function 
-// " ^ " : 
-
-
-
-
-/*
 Just a note: 
 MODES
 * 0 : Unrestricted
@@ -102,6 +89,16 @@ int parseMode(char * initMessage) {
 	return mode; 
 }
 
+//Packet Structure: Function,File Descriptor^File Path;o_flags*buffer:nbyte? 
+
+//Tip for delimeters: 
+// " , " : Function 
+// " ^ " : File Descriptor
+// " ; " : File Path
+// " * " : o_flags
+// " : " : buffer
+// " ? " : nbyte
+
 char ** tokenizeMessage(char* message) {
 	char ** result = (char**)malloc(6*sizeof(char*)); 
 		
@@ -136,6 +133,7 @@ char ** tokenizeMessage(char* message) {
 	int i;
 	int value;  
 
+	// Divide up the message into six parts based on the delimiters above.
 	for(i = 0; i < 6; i++) {
 		if(indexArr[i+1] - indexArr[i] != 1) {
 			switch(i) {
@@ -170,7 +168,8 @@ char ** tokenizeMessage(char* message) {
 					break;
 			}
 		} else {
-			
+			// If there is no such argument for the given function, there will be nothing between delimiters in the message.
+			// We need to indicate that they are empty.
 			 switch(i) {
                                 case 0:
                                         strncpy(functionName, "empty", 5);
@@ -202,6 +201,7 @@ char ** tokenizeMessage(char* message) {
 
 	printf("Yes?\n"); 	
 	
+	//Store the results in an array.
 	result[0] = functionName;
 	result[1] = fileDes;
 	result[2] = path;
@@ -214,24 +214,46 @@ char ** tokenizeMessage(char* message) {
 	return result;
 }
 
-
-int runCommands(clientInfo * client) {
+// The function that is run by the threads. It parses the message from the client and runs the appropriate net function.
+int runCommands(threadInfo * thread) {
 	
+	clientInfo * client = thread->client;
 	int socket = client->socketId; // This is the socket we are using to communicate with the client
-	char buffer[256]; 
+	char buffer[256]; //The buffer we're using to read from the client.
 	char * error = (char*)malloc(64);
 	pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER; 	
 
 	int n; 
 	
 	memset(buffer,0, 256); 
+	//We read 255 bytes from the client into the buffer.
     n = read(socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
+	//If the buffer message starts with initializing, we know the client just used netserverinit.
 	if (strncmp(buffer, "Initializing", 12) != 0) {
 		char ** tokenizedBuffer = tokenizeMessage(buffer);
+			// If the first argument in the message is open, we know the client just used netopen.
 			if (strncmp(tokenizedBuffer[0], "open", 4) == 0) {
+				pthread_mutex_lock(&userLock); 
+				if (client->threadNum != 0) {
+					errno = EMFILE;
+					printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
+						sprintf(error, "%d", errno);
+						//Errors have a ` at the beginning.
+                        strncat(response, "`", 1);
+                        strncat(response, error, strlen(error));
+                        write(socket, response, strlen(response));
+						
+						free(response);
+						free(error);
+						pthread_mutex_unlock(&userLock); 
+						return -1;
+				}
 				
+				pthread_mutex_unlock(&userLock); 
 				//Check file existence. 
 				
 				/*
@@ -258,14 +280,16 @@ int runCommands(clientInfo * client) {
 			
 				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
-								
+					// We multiply the file descriptors by -2 and return those to the client.
 					int fd = -2 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
 					
 					if(fd == 1) {
+						// If there is an error, errno is set automatically and we send it back to the client.
 						printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
+						//Errors have a ` at the beginning.
                         strncat(response, "`", 1);
                         strncat(response, error, strlen(error));
                         write(socket, response, strlen(response));
@@ -285,7 +309,8 @@ int runCommands(clientInfo * client) {
 					//Creating struct for EXTENSION A
 					
 					
-					
+					// After opening a file, we malloc enough space for it and add it to the list of files if it does not already exist.
+					// We need to lock the file list operations so that threads do not overlap.
 					fileInfo * myfile = (fileInfo*)malloc(sizeof(fileInfo));
 					myfile->pathname = (char*)malloc(strlen(tokenizedBuffer[2]) + 2);
 					sprintf(myfile->pathname, "%s", tokenizedBuffer[2]);
@@ -307,20 +332,18 @@ int runCommands(clientInfo * client) {
 					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
 					printf("writing\n");
+					pthread_join(&clientThreads[thread->threadNum]);
 					n = write(socket, strfd, 255); 
 					printf("Sent\n");
-					
+					pthread_mutex_lock(&userLock); 
+					client->threadNum = thread->threadNum;
+					pthread_mutex_unlock(&userLock); 
 					free(strfd); 
-					 
-				/*
-				} else {
-				
-					//The file does not have read permission. Throw error. 
-					sprintf(error,"%d", 1); 
-					write(*socket, error, 255,0); 
-				} 
-				*/
+			
+			// If the first token is read, then netread is being run.
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
+				while (client->threadNum == 0) {
+				}
 				printf("Reading\n");
 				
 				//THIS IS EBADF ERROR
@@ -373,6 +396,8 @@ int runCommands(clientInfo * client) {
 				free(strread); 
 				free(returnMessage); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
+				while (client->threadNum == 0) {
+				}
 				printf("Writing\n");
 				
 				//THIS IS EBADF ERROR
@@ -419,6 +444,8 @@ int runCommands(clientInfo * client) {
 				sprintf(strwritten, "%d", written);
 				n = write(socket, strwritten, strlen(strwritten)); 
 			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
+				while (client->threadNum == 0) {
+				}
 				printf("Closing\n");
 				
 				//THIS IS EBADF ERROR
@@ -467,6 +494,9 @@ int runCommands(clientInfo * client) {
 				n = write(socket, strsuccess, 255); 
 				
 				free(strsuccess); 
+				pthread_mutex_lock(&userLock); 
+				client->threadNum = 0;
+				pthread_mutex_unlock(&userLock); 
 			}
 			printf("These are the tokens: %s %s %s %s %s %s\n", tokenizedBuffer[0], tokenizedBuffer[1], tokenizedBuffer[2], tokenizedBuffer[3], tokenizedBuffer[4], tokenizedBuffer[5]);
 			free(tokenizedBuffer); 
@@ -561,7 +591,7 @@ int main(int argc, char ** argv) {
 		exit(1);
 	} 
 	
-	int i = 0;
+	int i = 1;
 	int clientNum = 0;
 	int flag = 1;
 	
@@ -585,8 +615,10 @@ int main(int argc, char ** argv) {
 				cInfo->next = NULL; 
 				printf("%s\n", cInfo->IPAddress);
 				cInfo = appendClient(cInfo);
-				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
-				pthread_join(clientThreads[i], NULL);
+				threadInfo* thread = malloc(sizeof(threadInfo));
+				thread->client = cInfo;
+				thread->threadNum = i;
+				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, thread); //Starts a new thread with the created struct  
 				printf("%d\n", newsockfd); 
 			}
 			

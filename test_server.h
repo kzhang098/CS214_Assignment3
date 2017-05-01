@@ -10,12 +10,9 @@
 #include <arpa/inet.h>
 
 #include "libnetfiles.c"
-/*
-* This struct is supposed to store client information such as it's unique id and it's socket id (the socket we're using to communicate with it) 
-*
-*
-*/
 
+
+/*
 typedef struct packetData {
 	int functionType; //0: Netopen ; 1: Netclose; 2: Netread; 3: Netwrite 	
 	int flag; //The open, read, write commands.
@@ -24,22 +21,31 @@ typedef struct packetData {
 	char * buffer; //The buffer containing information that's to be read from or written to the file. 
 	char * filePath; //The file that the client will be "touching"
 } packetData; 
+*/
 
+typedef struct threadInfo{
+	clientInfo * client;
+	int threadNum;
+} threadInfo;
+
+//A struct to hold information about a client. Used to determine what operations are allowed.
 typedef struct clientInfo { 
-	char * IPAddress;
-	char * currentlyOpenFilePath;
-	int socketId;
-	int mode;
-	struct clientInfo* next;
+	char * IPAddress; //Unique IP Address of the client.
+	char * currentlyOpenFilePath; //Path of the file they currently have open.
+	int socketId; // Current socket they are using to communicate with the server.
+	int mode; // File mode. Can be unrestricted, exclusive, or transaction.
+	struct clientInfo* next; // Next client in the linked list.
+	int threadNum;
 } clientInfo;
 
+//A struct to hold information about an open file. Used to determine what operations are allowed.
 typedef struct fileInfo {
-	char * pathname;
-	char * IPAddress;
-	int filed;
-	int mode;
-	int o_flags;
-	struct fileInfo * next;
+	char * pathname; //Path of the file.
+	char * IPAddress; //IP Address that has the file open.
+	int filed; //Current file descriptor of this file.
+	int mode; //File mode. Can be unrestricted, exclusive, or transaction.
+	int o_flags; //The flags used to open this file. Can be Read only, Write only, or Read and Write.
+	struct fileInfo * next; //Next file in the linked list.
 } fileInfo;
 
 
@@ -48,7 +54,7 @@ typedef struct fileInfo {
 */
 
 fileInfo * fileNames; 
-pthread_t clientThreads[5000];
+pthread_t* clientThreads[10000000];
 clientInfo* clients;
 fileInfo* files;
 pthread_mutex_t fileLock = PTHREAD_MUTEX_INITIALIZER;
