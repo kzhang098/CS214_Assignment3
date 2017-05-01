@@ -15,73 +15,80 @@
 
 /*
 Just a note: 
-
 MODES
-
 * 0 : Unrestricted
 * 1 : Exclusive
 * 2 : Transaction
-
 FLAGS
-
 * 0 : Read Only
 * 1 : Write Only
 * 2 : Read/Write
-
 */
 
-int checkLogic(fileInfo * entry, char * filePath, int mode, int flag) {
+int checkLogic(clientInfo* client) {
 		fileInfo * ptr = files;
-
+		pthread_mutex_lock(&fileLock); 
 		pthread_mutex_lock(&userLock); 
-		
-		int found = 0;
-		
+		printf("Checking mode\n");
 		while(ptr != NULL) {
 			//Depending on the mode of the current request, I have to follow different logic
-			switch(mode) {
+			switch(client->mode) {
 				case 0: //If mode from client request is Unrestricted.
-					if(strcmp(files->pathname,filePath) == 0) { //If the names match. 
-						found = 1; 
-						if(files->mode == 2) { //Is the file in transaction mode?
+				printf("Unrestricted\n");
+				printf("%s\n", ptr->pathname);
+				printf("%s\n", client->currentlyOpenFilePath);
+					if(strcmp(ptr->pathname,client->currentlyOpenFilePath) == 0) { //If the names match. 
+					printf("We have a match\n");
+						if(ptr->mode == 2 && strcmp(ptr->IPAddress, client->IPAddress) != 0) { //Is the file in transaction mode?
 							//Can't do anything
-							found = 0; // I set this back to zero since if 1, it would add to the end.
+							pthread_mutex_unlock(&userLock); 
+							pthread_mutex_unlock(&fileLock); 
+							return -1;
 						} else {
-							if(files->mode == 1 && (files->o_flags == 1 || files->o_flags == 2)) { // Check if in exclusive and in write OR read/write mode.
+							if((ptr->o_flags == 1 || ptr->o_flags == 2) && ptr->mode == 1 && strcmp(ptr->IPAddress, client->IPAddress) != 0) { // Check if in exclusive and in write OR read/write mode.
 								//Client can only read then. Since with exclusive only ONE client can have read permissions at a time
+								pthread_mutex_unlock(&userLock); 
+								pthread_mutex_unlock(&fileLock); 
+								return -2;
 							}
 						}
 					} 
 					
 					break;
 				case 1: //Exclusive
-					if(strcmp(files->pathname,filePath) == 0) { //Open?
-						found = 1;
-						if(files->mode == 2) { //Transaction Mode?
+				printf("Exclusive\n");
+					if(strcmp(ptr->pathname,client->currentlyOpenFilePath) == 0) { //Open?
+						if(ptr->mode == 2 && strcmp(ptr->IPAddress, client->IPAddress) != 0) { //Transaction Mode?
 							//Can't do anything.
-							found == 0;
+							pthread_mutex_unlock(&userLock); 
+							pthread_mutex_unlock(&fileLock); 
+							return -1;
 						} else { //
-							if(files->o_flags == 1 || files->o_flags == 2) { //Check if in write mode. If yes, then you cannot write. 
-							
+							if((ptr->o_flags == 1 || ptr->o_flags == 2) && ptr->mode == 1 && strcmp(ptr->IPAddress, client->IPAddress) != 0) { //Check if in write mode. If yes, then you cannot write. 
+								pthread_mutex_unlock(&userLock); 
+								pthread_mutex_unlock(&fileLock); 
+								return -2;
 							}
 						}
 					}
 				
 					break;
-				case 3:
-			
-				break;
-			
+				case 2: //Transaction
+				printf("Transaction\n");
+					if(strcmp(ptr->pathname,client->currentlyOpenFilePath) == 0 && strcmp(ptr->IPAddress, client->IPAddress) != 0) { //Open?
+						pthread_mutex_unlock(&userLock); 
+						pthread_mutex_unlock(&fileLock); 
+						return -1; //Can't do anything
+					}
+					break;
+				default:
+					break;
 			}
 			
 			ptr = ptr->next; 	
 		}
-		
-		if(found) {
-				//Then add to ptr since ptr is already at the end.
-		}
-		
 		pthread_mutex_unlock(&userLock); 
+		pthread_mutex_unlock(&fileLock); 
 		
 		return 0; // Just temporary
 }		
@@ -167,6 +174,7 @@ char ** tokenizeMessage(char* message) {
 			 switch(i) {
                                 case 0:
                                         strncpy(functionName, "empty", 5);
+										strcat(fileDes, "\0");
                                         break;
                                 case 1:
                                         strncpy(fileDes,  "empty", 5);
@@ -279,12 +287,19 @@ int runCommands(clientInfo * client) {
 					
 					
 					fileInfo * myfile = (fileInfo*)malloc(sizeof(fileInfo));
-					myfile->pathname = (char*)malloc(sizeof(tokenizedBuffer[0]));
-					strncpy(myfile->pathname, tokenizedBuffer[0], strlen(tokenizedBuffer[0]));
+					myfile->pathname = (char*)malloc(strlen(tokenizedBuffer[2]) + 2);
+					sprintf(myfile->pathname, "%s", tokenizedBuffer[2]);
 					myfile->mode = client->mode;
 					myfile->o_flags = atoi(tokenizedBuffer[3]);
-					myfile->next = NULL;
-					
+					myfile->filed = fd;
+					myfile->IPAddress = client->IPAddress;
+					pthread_mutex_lock(&userLock); 
+					client->currentlyOpenFilePath = malloc(strlen(tokenizedBuffer[2]) + 2);
+					sprintf(client->currentlyOpenFilePath, "%s", tokenizedBuffer[2]);
+					pthread_mutex_unlock(&userLock); 
+					pthread_mutex_lock(&fileLock); 
+					appendFile(myfile);
+					pthread_mutex_unlock(&fileLock); 
 					
 					
 					// -----------------------------------------------------------------------
@@ -307,15 +322,10 @@ int runCommands(clientInfo * client) {
 				*/
 			} else if (strncmp(tokenizedBuffer[0], "read", 4) == 0) {
 				printf("Reading\n");
-				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_SET);
-				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
-				
-				//pthread_rwlock_rdlock(&rwlock);
-				int bytesread = read(atoi(tokenizedBuffer[1]) / -2, readBuffer, atoi(tokenizedBuffer[5]));
 				
 				//THIS IS EBADF ERROR
 
-				if(bytesread < 0) {
+				if(fcntl(atoi(tokenizedBuffer[1]) / -2, F_GETFD) < 0) {
 					printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
@@ -328,7 +338,29 @@ int runCommands(clientInfo * client) {
 						free(error); 
 						return -1;
 				}
-
+				
+				if (checkLogic(client) == -1) {
+					errno = EAGAIN;
+					printf("Error: %s\n", strerror(errno)); 
+					char * response = (char*)malloc(15);
+					char* error = malloc(10);
+					sprintf(error, "%d", errno);
+                    strncat(response, "`", 1);
+                    strncat(response, error, strlen(error));
+                    write(socket, response, strlen(response));
+					
+					free(response);
+					free(error);
+						
+					return -1;
+				}
+				printf("Checked\n");
+				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_SET);
+				char * readBuffer = malloc(atoi(tokenizedBuffer[5]) + 5);
+				
+				//pthread_rwlock_rdlock(&rwlock);
+				int bytesread = read(atoi(tokenizedBuffer[1]) / -2, readBuffer, atoi(tokenizedBuffer[5]));
+	
 				//pthread_rwlock_unlock(&rwlock); 
 				char * strread = malloc(10);
 				sprintf(strread, "%d", bytesread);
@@ -342,37 +374,10 @@ int runCommands(clientInfo * client) {
 				free(returnMessage); 
 			} else if (strncmp(tokenizedBuffer[0], "write", 5) == 0) {
 				printf("Writing\n");
-				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_END);
-				//pthread_rwlock_rdlock(&rwlock);
-				int written = write(atoi(tokenizedBuffer[1]) / -2, tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
-				printf("Done writing\n");
-				if(written < 0) {
-					printf("Error: %s\n", strerror(errno)); 
-						char * response = (char*)malloc(15);
-						char* error = malloc(10);
-						sprintf(error, "%d", errno);
-                        strncat(response, "`", 1);
-                        strncat(response, error, strlen(error));
-                        write(socket, response, strlen(response));
-						
-						free(response);
-						free(error); 
-						
-						return -1;
-				} 
-
-				//pthread_rwlock_unlock(&rwlock); 
-				//printf("%s\n", tokenizedBuffer[4]); 
-				char * strwritten = malloc(10);
-				sprintf(strwritten, "%d", written);
-				n = write(socket, strwritten, strlen(strwritten)); 
-			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
-				printf("Closing\n");
-				int success = close(atoi(tokenizedBuffer[1]) / -2);
 				
-				//ERROR HANDLING
+				//THIS IS EBADF ERROR
 				
-				if(success < 0) {
+				if(fcntl(atoi(tokenizedBuffer[1]) / -2, F_GETFD) < 0) {
 					printf("Error: %s\n", strerror(errno)); 
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
@@ -385,7 +390,78 @@ int runCommands(clientInfo * client) {
 						free(error); 
 						return -1;
 				}
-		
+				
+				int check = checkLogic(client);
+				if (check == -1 || check == -2) {
+					errno = EAGAIN;
+					printf("Error: %s\n", strerror(errno)); 
+					char * response = (char*)malloc(15);
+					char* error = malloc(10);
+					sprintf(error, "%d", errno);
+                    strncat(response, "`", 1);
+                    strncat(response, error, strlen(error));
+                    write(socket, response, strlen(response));
+					
+					free(response);
+					free(error);
+						
+					return -1;
+				}
+				
+				lseek(atoi(tokenizedBuffer[1]) / -2, 0, SEEK_END);
+				//pthread_rwlock_rdlock(&rwlock);
+				int written = write(atoi(tokenizedBuffer[1]) / -2, tokenizedBuffer[4], atoi(tokenizedBuffer[5]));
+				printf("Done writing\n");
+
+				//pthread_rwlock_unlock(&rwlock); 
+				//printf("%s\n", tokenizedBuffer[4]); 
+				char * strwritten = malloc(10);
+				sprintf(strwritten, "%d", written);
+				n = write(socket, strwritten, strlen(strwritten)); 
+			} else if (strncmp(tokenizedBuffer[0], "close", 5) == 0) {
+				printf("Closing\n");
+				
+				//THIS IS EBADF ERROR
+				
+				if(fcntl(atoi(tokenizedBuffer[1]) / -2, F_GETFD) < 0) {
+					printf("Error: %s\n", strerror(errno)); 
+						char * response = (char*)malloc(15);
+						char* error = malloc(10);
+						sprintf(error, "%d", errno);
+                        strncat(response, "`", 1);
+                        strncat(response, error, strlen(error));
+                        write(socket, response, strlen(response));
+						
+						free(response);
+						free(error); 
+						return -1;
+				}
+				
+				int success = close(atoi(tokenizedBuffer[1]) / -2);
+				printf("Succeeded\n");
+				pthread_mutex_lock(&fileLock); 
+				fileInfo* ptr = files;
+				fileInfo* prev = NULL;
+				while (ptr != NULL) {
+					if (ptr->filed == atoi(tokenizedBuffer[1])){
+						if (prev != NULL) {
+							prev->next = ptr->next;
+							free(ptr);
+						} else {
+							free(files);
+							files = NULL;
+						}
+						break;
+					}
+					prev = ptr;
+					ptr = ptr->next;
+				}
+				pthread_mutex_unlock(&fileLock); 
+				pthread_mutex_lock(&userLock); 
+				free(client->currentlyOpenFilePath);
+				client->currentlyOpenFilePath = NULL;
+				pthread_mutex_unlock(&userLock); 
+				printf("Done locking\n");
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
 				n = write(socket, strsuccess, 255); 
@@ -404,7 +480,7 @@ int runCommands(clientInfo * client) {
 	return 0; 
 }
 
-void appendClient(clientInfo* client) {
+clientInfo* appendClient(clientInfo* client) {
 
 	printf("Testing\n");
 	clientInfo* ptr = clients;
@@ -413,14 +489,14 @@ void appendClient(clientInfo* client) {
 		printf("Put at front\n");
 		client->next = NULL;
 		clients = client;
-		return;
+		return clients;
 	}
 	printf("Not empty\n");
 	while (ptr != NULL) {
 		if (strcmp(ptr->IPAddress, client->IPAddress) == 0) {
 			printf("Already exists\n");
 			ptr->socketId = client->socketId;
-			return;
+			return ptr;
 		}
 		printf("%s\n", ptr->IPAddress);
 		prev = ptr;
@@ -429,8 +505,29 @@ void appendClient(clientInfo* client) {
 	printf("Appending something\n");
 	client->next = NULL;
 	prev->next = client;
-	
+	return client;
+}
 
+void appendFile(fileInfo* file) {
+
+	printf("Testing files\n");
+	fileInfo* ptr = files;
+	fileInfo* prev = NULL;
+	if (files == NULL) {
+		printf("Put at front of files\n");
+		file->next = NULL;
+		files = file;
+		return;
+	}
+	printf("Files not empty\n");
+	while (ptr != NULL) {
+		printf("%s\n", ptr->pathname);
+		prev = ptr;
+		ptr = ptr->next;
+	}
+	printf("Appending something to files\n");
+	file->next = NULL;
+	prev->next = file;
 }
 
 int main(int argc, char ** argv) {
@@ -487,7 +584,7 @@ int main(int argc, char ** argv) {
 				sprintf(cInfo->IPAddress, "%s\0",inet_ntoa(cli_addr.sin_addr));
 				cInfo->next = NULL; 
 				printf("%s\n", cInfo->IPAddress);
-				appendClient(cInfo);
+				cInfo = appendClient(cInfo);
 				flag = pthread_create(&clientThreads[i], NULL, (void*)runCommands, cInfo); //Starts a new thread with the created struct  
 				pthread_join(clientThreads[i], NULL);
 				printf("%d\n", newsockfd); 

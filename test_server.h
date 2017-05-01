@@ -27,6 +27,7 @@ typedef struct packetData {
 
 typedef struct clientInfo { 
 	char * IPAddress;
+	char * currentlyOpenFilePath;
 	int socketId;
 	int mode;
 	struct clientInfo* next;
@@ -34,6 +35,8 @@ typedef struct clientInfo {
 
 typedef struct fileInfo {
 	char * pathname;
+	char * IPAddress;
+	int filed;
 	int mode;
 	int o_flags;
 	struct fileInfo * next;
@@ -48,5 +51,5 @@ fileInfo * fileNames;
 pthread_t clientThreads[5000];
 clientInfo* clients;
 fileInfo* files;
-//pthread_mutex_t userLock;
+pthread_mutex_t fileLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;

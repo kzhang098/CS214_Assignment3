@@ -178,9 +178,11 @@ int netserverinit(char * hostname, int mode) {
 		return -1;
 	}
 	
-	char * response = malloc(strlen("Initializing:") + 1);
-	strcat(response,"Initializing:");
-	strcat(response, mode);
+	char * response = malloc(strlen("Initializing:") + 3);
+	strncat(response,"Initializing:", 13);
+	char* modestr = malloc(4);
+	sprintf(modestr, "%d", mode);
+	strncat(response, modestr, 1);
 	
 	int n = write(sockfd, response, strlen(response));
 	if(n < 0) {
