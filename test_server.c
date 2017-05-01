@@ -332,7 +332,7 @@ int runCommands(threadInfo * thread) {
 					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
 					printf("writing\n");
-					pthread_join(&clientThreads[thread->threadNum]);
+					printf("%s\n", strfd);
 					n = write(socket, strfd, 255); 
 					printf("Sent\n");
 					pthread_mutex_lock(&userLock); 

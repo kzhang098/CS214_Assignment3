@@ -31,9 +31,10 @@ char * callServer(int sockfd, char * buffer) {
 		exit(1);	
 	}
 
-	bzero(buffer,256);
+	bzero(buffer,255);
 	printf("Reading...\n"); 
 	n = read(sockfd,buffer,255); 
+	printf("%s\n", buffer);
 	printf("Stuck...\n");
 	if(n < 0) {
 		char * error = malloc(100);

@@ -23,10 +23,6 @@ typedef struct packetData {
 } packetData; 
 */
 
-typedef struct threadInfo{
-	clientInfo * client;
-	int threadNum;
-} threadInfo;
 
 //A struct to hold information about a client. Used to determine what operations are allowed.
 typedef struct clientInfo { 
@@ -37,6 +33,12 @@ typedef struct clientInfo {
 	struct clientInfo* next; // Next client in the linked list.
 	int threadNum;
 } clientInfo;
+
+
+typedef struct threadInfo{
+	clientInfo * client;
+	int threadNum;
+} threadInfo;
 
 //A struct to hold information about an open file. Used to determine what operations are allowed.
 typedef struct fileInfo {

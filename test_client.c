@@ -8,7 +8,7 @@ int main(int argc, char ** argv) {
 	
 	int i;
 	netserverinit(argv[1], 2);
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 25; i++) {
 		char * test = malloc(50);
 		int fd = netopen("./Hints.txt", 2);
 		netread(fd, test, 12);
