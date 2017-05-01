@@ -449,7 +449,7 @@ int runCommands(clientInfo * client) {
 							free(ptr);
 						} else {
 							free(files);
-							files = NULL;
+							files = ptr->next;
 						}
 						break;
 					}
