@@ -173,7 +173,7 @@ char ** tokenizeMessage(char* message) {
 			 switch(i) {
                                 case 0:
                                         strncpy(functionName, "empty", 5);
-										strcat(fileDes, "\0");
+					strcat(fileDes, "\0");
                                         break;
                                 case 1:
                                         strncpy(fileDes,  "empty", 5);
@@ -227,7 +227,7 @@ int runCommands(threadInfo * thread) {
 	
 	memset(buffer,0, 256); 
 	//We read 255 bytes from the client into the buffer.
-    n = read(socket, buffer, 255); 
+    	n = read(socket, buffer, 255); 
 	printf("This is the message: %s\n", buffer);
 			
 	//If the buffer message starts with initializing, we know the client just used netserverinit.
@@ -254,31 +254,7 @@ int runCommands(threadInfo * thread) {
 				}
 				
 				pthread_mutex_unlock(&userLock); 
-				//Check file existence. 
 				
-				/*
-				FILE * file;
-				file = fopen(tokenizedBuffer[0],"r");
-				if(file == NULL) {
-					sprintf(error, "%d", 4);
-					write(*socket, error, 255,0); 
-				} 
-				*/
-				//Check if path is a directory. If so, then write 3 which represents EISDIR error
-				
-				/*				
-				if(isDir(tokenizedBuffer[2]) == 1) {
-					printf("Error: %s\n", strerror(errno)); 
-					char * response = (char*)malloc(64);
-					char* error = malloc(64);
-					sprintf(error, "%d", errno);
-                    			strncat(response, "^", 1);
-                    			strncat(response, error, strlen(error));
-                    			write(*socket, response, strlen(response),0);
-					return -1;
-				}*/
-			
-				//if(access(tokenizedBuffer[2], R_OK)) {
 					printf("Opening\n");
 					// We multiply the file descriptors by -2 and return those to the client.
 					int fd = -2 * open(tokenizedBuffer[2], atoi(tokenizedBuffer[3]));
@@ -331,7 +307,7 @@ int runCommands(threadInfo * thread) {
 					
 					char * strfd = malloc(10);
 					sprintf(strfd, "%d", fd);
-					printf("writing\n");
+					printf("writing here\n");
 					printf("%s\n", strfd);
 					n = write(socket, strfd, 255); 
 					printf("Sent\n");
@@ -353,9 +329,9 @@ int runCommands(threadInfo * thread) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        strncat(response, "`", 1);
-                        strncat(response, error, strlen(error));
-                        write(socket, response, strlen(response));
+                        			strncat(response, "`", 1);
+                        			strncat(response, error, strlen(error));
+                        			write(socket, response, strlen(response));
 						
 						free(response);
 						free(error); 
@@ -368,9 +344,9 @@ int runCommands(threadInfo * thread) {
 					char * response = (char*)malloc(15);
 					char* error = malloc(10);
 					sprintf(error, "%d", errno);
-                    strncat(response, "`", 1);
-                    strncat(response, error, strlen(error));
-                    write(socket, response, strlen(response));
+                    			strncat(response, "`", 1);
+                    			strncat(response, error, strlen(error));
+                    			write(socket, response, strlen(response));
 					
 					free(response);
 					free(error);
@@ -400,6 +376,8 @@ int runCommands(threadInfo * thread) {
 				}
 				printf("Writing\n");
 				
+
+				printf("THIS IS THE FILE DESCRIPTOR: %d\n", tokenizedBuffer[1]); 
 				//THIS IS EBADF ERROR
 				
 				if(fcntl(atoi(tokenizedBuffer[1]) / -2, F_GETFD) < 0) {
@@ -407,9 +385,9 @@ int runCommands(threadInfo * thread) {
 						char * response = (char*)malloc(15);
 						char* error = malloc(10);
 						sprintf(error, "%d", errno);
-                        strncat(response, "`", 1);
-                        strncat(response, error, strlen(error));
-                        write(socket, response, strlen(response));
+                        			strncat(response, "`", 1);
+                        			strncat(response, error, strlen(error));
+                        			write(socket, response, strlen(response));
 						
 						free(response);
 						free(error); 
@@ -423,9 +401,9 @@ int runCommands(threadInfo * thread) {
 					char * response = (char*)malloc(15);
 					char* error = malloc(10);
 					sprintf(error, "%d", errno);
-                    strncat(response, "`", 1);
-                    strncat(response, error, strlen(error));
-                    write(socket, response, strlen(response));
+                    			strncat(response, "`", 1);
+                    			strncat(response, error, strlen(error));
+                    			write(socket, response, strlen(response));
 					
 					free(response);
 					free(error);
@@ -485,9 +463,11 @@ int runCommands(threadInfo * thread) {
 				}
 				pthread_mutex_unlock(&fileLock); 
 				pthread_mutex_lock(&userLock); 
+
 				free(client->currentlyOpenFilePath);
 				client->currentlyOpenFilePath = NULL;
 				pthread_mutex_unlock(&userLock); 
+
 				printf("Done locking\n");
 				char * strsuccess = malloc(5);
 				sprintf(strsuccess, "%d", success);
